@@ -2,7 +2,8 @@ import express from 'express';
 import User from './models/User';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Pterodactyl often uses SERVER_PORT, while others use PORT
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
   res.send('Bot is running! 🤖');
