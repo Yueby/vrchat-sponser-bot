@@ -50,7 +50,11 @@ export const connectDB = async () => {
     const uri = process.env.MONGO_URI;
     if (!uri) throw new Error('MONGO_URI is not defined');
     
-    await mongoose.connect(uri);
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 30000, // Timeout after 30s instead of 10s
+      socketTimeoutMS: 45000,
+      family: 4 // Force IPv4
+    });
     console.log('✅ Connected to MongoDB Atlas');
   } catch (error) {
     console.error('❌ MongoDB Connection Error:', error);
