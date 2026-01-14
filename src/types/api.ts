@@ -10,6 +10,7 @@ export interface SponsorData {
   isBooster: boolean;
   joinedAt: string | null;
   supportDays: number;
+  isExternal?: boolean;  // 标识是否为外部用户
 }
 
 /**

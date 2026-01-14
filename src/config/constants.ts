@@ -31,3 +31,13 @@ export const VRCHAT_NAME = {
 export const DATABASE = {
   BULK_WRITE_BATCH_SIZE: 500 // 每批次最多 500 条记录
 } as const;
+
+/**
+ * Embed 颜色配置
+ */
+export const EMBED_COLORS = {
+  SUCCESS: 0x57F287,  // 绿色 - 成功操作
+  ERROR: 0xED4245,    // 红色 - 错误/删除
+  INFO: 0x5865F2,     // 蓝色 - 信息展示
+  WARNING: 0xFEE75C   // 黄色 - 警告信息
+} as const;

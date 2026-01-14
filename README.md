@@ -22,6 +22,12 @@
 - 🔐 **访问控制**：服务器所有者可启用/禁用 API
 - ⚡ **限流保护**：180 次/分钟
 
+### 外部用户支持
+- 👥 **中国用户友好**：支持无法加入 Discord 服务器的用户
+- 🎭 **虚拟角色**：使用服务器现有角色名称
+- 📝 **管理员管理**：由管理员手动添加和维护
+- 🔗 **可选关联**：可关联 Discord 账号（如有）
+
 ---
 
 ## 🎮 命令列表
@@ -37,6 +43,12 @@
 ### 管理员命令
 - `/admin sync` - 手动同步所有成员数据
 - `/admin unbind <user>` - 强制解绑指定用户
+
+### 外部用户管理命令（管理员专用）
+- `/external add` - 添加无法加入服务器的外部用户
+- `/external update` - 更新外部用户信息
+- `/external remove` - 删除外部用户
+- `/external list` - 列出所有外部用户
 
 ---
 
@@ -71,6 +83,8 @@
 - 按角色分组
 - 用户可以出现在多个角色组中
 - 自动计算支持天数
+- 包含服务器成员和外部用户
+- `isExternal` 字段区分用户类型
 
 **错误响应**：
 - `404` - 服务器未找到
@@ -148,13 +162,15 @@ src/
 ├── models/                   # MongoDB 模型
 │   ├── Guild.ts             # 服务器配置
 │   ├── DiscordUser.ts       # 用户数据
-│   └── VRChatBinding.ts     # VRChat 绑定
+│   ├── VRChatBinding.ts     # VRChat 绑定
+│   └── ExternalUser.ts      # 外部用户
 ├── utils/                    # 工具函数
 │   ├── logger.ts            # 日志系统
 │   ├── errors.ts            # 错误处理
 │   ├── discord.ts           # Discord 工具
 │   ├── validation.ts        # 输入验证
-│   └── database.ts          # 批量操作
+│   ├── database.ts          # 批量操作
+│   └── external.ts          # 外部用户工具
 ├── types/                    # 类型定义
 │   └── api.ts               # API 类型
 └── config/                   # 配置
@@ -209,6 +225,8 @@ src/
 - `Guild`: `guildId` (unique)
 - `DiscordUser`: `(userId, guildId)` (unique composite)
 - `VRChatBinding`: `(discordUserId, guildId)` (unique composite)
+- `ExternalUser`: `(vrchatName, guildId)` (unique composite)
+- `ExternalUser`: `(discordUserId, guildId)` (unique sparse)
 
 ---
 
@@ -243,6 +261,12 @@ A: 使用 `/server api true` 命令启用 API 访问
 
 **Q: 用户重新加入服务器后数据丢失？**  
 A: 数据在用户离开时自动删除，重新加入需要重新绑定
+
+**Q: 如何添加无法加入服务器的用户？**  
+A: 使用 `/external add` 命令添加外部用户，他们会出现在 API 返回中
+
+**Q: 外部用户和服务器成员有什么区别？**  
+A: 外部用户使用虚拟角色，不能是 Booster，API 返回中 `isExternal` 为 `true`
 
 **Q: 编译失败？**  
 A: 确保 TypeScript 版本 >= 5.0，运行 `pnpm install` 重新安装依赖

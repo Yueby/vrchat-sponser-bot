@@ -1,5 +1,11 @@
 // 命令路由处理器
 import { ChatInputCommandInteraction } from 'discord.js';
+import {
+    handleExternalAdd,
+    handleExternalList,
+    handleExternalRemove,
+    handleExternalUpdate
+} from '../commands/admin/external';
 import { handleAdminSync } from '../commands/admin/sync';
 import { handleAdminUnbind } from '../commands/admin/unbind';
 import { handleChangeName } from '../commands/changename';
@@ -35,6 +41,19 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
           await handleAdminSync(interaction);
         } else if (adminSubcommand === 'unbind') {
           await handleAdminUnbind(interaction);
+        }
+        break;
+
+      case 'external':
+        const externalSubcommand = interaction.options.getSubcommand();
+        if (externalSubcommand === 'add') {
+          await handleExternalAdd(interaction);
+        } else if (externalSubcommand === 'update') {
+          await handleExternalUpdate(interaction);
+        } else if (externalSubcommand === 'remove') {
+          await handleExternalRemove(interaction);
+        } else if (externalSubcommand === 'list') {
+          await handleExternalList(interaction);
         }
         break;
 

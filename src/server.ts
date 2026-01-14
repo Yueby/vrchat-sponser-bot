@@ -2,9 +2,11 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { client } from './bot';
 import DiscordUser from './models/DiscordUser';
+import ExternalUser from './models/ExternalUser';
 import Guild from './models/Guild';
 import VRChatBinding from './models/VRChatBinding';
 import { SponsorData, SponsorsApiResponse } from './types/api';
+import { getDefaultAvatar } from './utils/external';
 import { logger } from './utils/logger';
 
 const app = express();
@@ -46,8 +48,11 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     // 更新 API 调用时间
     await Guild.updateOne({ guildId }, { lastApiCallAt: new Date() });
     
-    // 查询该服务器的绑定数据
+    // 查询该服务器的绑定数据（服务器成员）
     const bindings = await VRChatBinding.find({ guildId }).sort({ bindTime: -1 });
+    
+    // 查询外部用户数据
+    const externalUsers = await ExternalUser.find({ guildId }).sort({ addedAt: -1 });
     
     // 获取 Discord 用户数据（roles）
     const discordUserIds = bindings.map(b => b.discordUserId);
@@ -79,6 +84,7 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     const roleGroups: Record<string, SponsorData[]> = {};
     const allRoles = new Set<string>();
     
+    // 处理服务器成员绑定
     bindings.forEach(binding => {
       const discordUser = discordUserMap.get(binding.discordUserId);
       const member = discordGuild.members.cache.get(binding.discordUserId);
@@ -109,7 +115,8 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
           joinedAt: discordUser?.joinedAt?.toISOString() || null,
           supportDays: discordUser?.joinedAt 
             ? Math.floor((Date.now() - discordUser.joinedAt.getTime()) / (1000 * 60 * 60 * 24))
-            : 0
+            : 0,
+          isExternal: false
         };
         
         roleNames.forEach(roleName => {
@@ -120,11 +127,46 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       }
     });
     
+    // 处理外部用户
+    externalUsers.forEach(externalUser => {
+      // 使用虚拟角色名称
+      const roleNames = externalUser.virtualRoles;
+      
+      // 跳过没有角色的外部用户
+      if (roleNames.length === 0) return;
+      
+      // 获取头像
+      let avatar = getDefaultAvatar();
+      if (externalUser.discordUserId) {
+        const user = client.users.cache.get(externalUser.discordUserId);
+        avatar = user?.displayAvatarURL({ size: 256 }) || avatar;
+      }
+      
+      // 计算支持天数
+      const supportDays = Math.floor((Date.now() - externalUser.addedAt.getTime()) / (1000 * 60 * 60 * 24));
+      
+      const userData: SponsorData = {
+        vrchatName: externalUser.vrchatName,
+        displayName: externalUser.displayName || externalUser.vrchatName,
+        avatar,
+        isBooster: false,  // 外部用户不能是 Booster
+        joinedAt: externalUser.addedAt.toISOString(),
+        supportDays,
+        isExternal: true
+      };
+      
+      roleNames.forEach(roleName => {
+        if (!roleGroups[roleName]) roleGroups[roleName] = [];
+        roleGroups[roleName].push(userData);
+        allRoles.add(roleName);
+      });
+    });
+    
     // 构建最终结果（VRChat DataDictionary 格式）
     const result = {} as SponsorsApiResponse;
     Object.keys(roleGroups).forEach(role => {
       const group = roleGroups[role];
-      const roleData: Record<string, any> = {};
+      const roleData: Record<string, SponsorData> = {};
       group.forEach((user, index) => {
         roleData[index.toString()] = user;
       });

@@ -1,5 +1,6 @@
 // /admin unbind 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { EMBED_COLORS } from '../../config/constants';
 import VRChatBinding from '../../models/VRChatBinding';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
 import { logger } from '../../utils/logger';
@@ -33,7 +34,7 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
         .setDescription(
           `The VRChat binding for **${targetUser.username}** has been removed.`
         )
-        .setColor(0xED4245) // Red for deletion
+        .setColor(EMBED_COLORS.ERROR)
         .setThumbnail(targetUser.displayAvatarURL({ size: 128 }))
         .addFields(
           {
@@ -72,7 +73,7 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
         .setDescription(
           `User **${targetUser.username}** has no VRChat binding in this server.`
         )
-        .setColor(0x5865F2) // Blue for info
+        .setColor(EMBED_COLORS.INFO)
         .setThumbnail(targetUser.displayAvatarURL({ size: 128 }))
         .addFields({
           name: '💡 Tip',

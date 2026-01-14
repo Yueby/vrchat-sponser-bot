@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { client, connectDB } from './bot';
 import { startServer } from './server';
+import { logger } from './utils/logger';
 
 // Load environment variables
 dotenv.config();
@@ -15,11 +16,14 @@ const main = async () => {
   // 3. Login Bot
   const token = process.env.DISCORD_TOKEN;
   if (!token) {
-    console.error('❌ DISCORD_TOKEN is missing');
+    logger.error('❌ DISCORD_TOKEN is missing');
     process.exit(1);
   }
 
   await client.login(token);
 };
 
-main().catch(console.error);
+main().catch((error) => {
+  logger.error('Fatal error:', error);
+  process.exit(1);
+});

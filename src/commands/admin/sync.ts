@@ -1,5 +1,6 @@
 // /admin sync 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { bulkUpsertDiscordUsers } from '../../utils/database';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
@@ -41,7 +42,7 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
       .setDescription(
         `Successfully synchronized all member data with the database.`
       )
-      .setColor(0x57F287) // Green for success
+      .setColor(EMBED_COLORS.SUCCESS)
       .setThumbnail(interaction.guild!.iconURL({ size: 128 }) || null)
       .addFields(
         {

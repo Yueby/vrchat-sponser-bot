@@ -1,6 +1,7 @@
 // /server stats 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { client } from '../../bot';
+import { EMBED_COLORS } from '../../config/constants';
 import DiscordUser from '../../models/DiscordUser';
 import Guild from '../../models/Guild';
 import VRChatBinding from '../../models/VRChatBinding';
@@ -47,7 +48,7 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
         `Owner: <@${guild.ownerId}>\n` +
         `Bot Active: **${botJoinedDays}** days`
       )
-      .setColor(guild.apiEnabled ? 0x57F287 : 0x5865F2) // Green if API enabled, blue otherwise
+      .setColor(guild.apiEnabled ? EMBED_COLORS.SUCCESS : EMBED_COLORS.INFO)
       .setThumbnail(guildInfo.iconURL({ size: 256 }) || null)
       .addFields(
         { 

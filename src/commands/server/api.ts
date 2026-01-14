@@ -1,5 +1,6 @@
 // /server api 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { handleCommandError, requireGuild, requireOwner } from '../../utils/errors';
 import { logger } from '../../utils/logger';
@@ -32,7 +33,7 @@ export async function handleServerApi(interaction: ChatInputCommandInteraction):
           ? 'The VRChat API endpoint is now **accessible**.\nVRChat worlds can now fetch sponsor data from this server.'
           : 'The VRChat API endpoint has been **disabled**.\nNo external access is allowed until re-enabled.'
       )
-      .setColor(enabled ? 0x57F287 : 0xED4245) // Green for enabled, red for disabled
+      .setColor(enabled ? EMBED_COLORS.SUCCESS : EMBED_COLORS.ERROR)
       .addFields(
         {
           name: '🌐 API Endpoint',

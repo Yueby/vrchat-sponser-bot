@@ -1,6 +1,6 @@
 // /changename 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { COOLDOWNS } from '../config/constants';
+import { COOLDOWNS, EMBED_COLORS } from '../config/constants';
 import DiscordUser from '../models/DiscordUser';
 import VRChatBinding from '../models/VRChatBinding';
 import { getMemberRoleIds, getMemberRoleNames, isMemberBooster } from '../utils/discord';
@@ -112,7 +112,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
           ? `Your VRChat name has been **successfully bound** to your Discord account!`
           : `Your VRChat name has been **updated** successfully.`
       )
-      .setColor(member.displayColor || 0x57F287) // Member color or green
+      .setColor(member.displayColor || EMBED_COLORS.SUCCESS)
       .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
       .addFields(
         {

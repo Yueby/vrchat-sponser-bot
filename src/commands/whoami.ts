@@ -1,5 +1,6 @@
 // /whoami 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { EMBED_COLORS } from '../config/constants';
 import DiscordUser from '../models/DiscordUser';
 import VRChatBinding from '../models/VRChatBinding';
 import { getMemberRoleNames } from '../utils/discord';
@@ -42,7 +43,7 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
         `**Discord:** ${username}\n` +
         `**User ID:** \`${userId}\``
       )
-      .setColor(member?.displayColor || 0x5865F2)
+      .setColor(member?.displayColor || EMBED_COLORS.INFO)
       .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
       .addFields(
         { 
