@@ -16,27 +16,32 @@ const main = async () => {
     startServer();
     // 等待服务器启动
     await new Promise(resolve => setTimeout(resolve, 1000));
-    logger.success('✅ Web server initialized');
+    logger.success('Web server initialized');
 
     // 2. Connect to Database
     logger.info('Step 2/3: Connecting to database...');
     await connectDB();
-    logger.success('✅ Database connected');
+    logger.success('Database connected');
 
     // 3. Login Bot
     logger.info('Step 3/3: Logging in to Discord...');
     const token = process.env.DISCORD_TOKEN;
     if (!token) {
-      logger.error('❌ DISCORD_TOKEN is missing');
+      logger.error('DISCORD_TOKEN is missing');
       process.exit(1);
     }
 
     await client.login(token);
-    logger.success('✅ Discord login successful');
+    logger.success('Discord login successful');
     logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    logger.success('🎉 ALL SYSTEMS ONLINE - BOT IS READY!');
+    logger.success('ALL SYSTEMS ONLINE - BOT IS READY!');
     logger.success('Server started successfully!'); // 平台可能检查这个
     logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    // 🔔 保持活动：定期输出心跳日志（防止平台认为无响应）
+    setInterval(() => {
+      logger.info(`💖 Heartbeat: Bot is running (${client.guilds.cache.size} servers)`);
+    }, 30000); // 每 30 秒
   } catch (error) {
     logger.error('Error during startup:', error);
     throw error;

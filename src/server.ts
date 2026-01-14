@@ -31,21 +31,21 @@ const apiLimiter = rateLimit({
 // Apply rate limiting to all /api/ paths
 app.use('/api/', apiLimiter);
 
-// 健康检查端点（用于容器平台检测）
-app.get('/', (req, res) => {
-  res.send('VRChat Sponsor Bot is running! 🤖');
+// 健康检查端点（用于容器平台检测）- 优先级最高，最快响应
+app.get('/ping', (req, res) => {
+  res.send('pong');
 });
 
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok',
-    uptime: process.uptime(),
+    uptime: Math.floor(process.uptime()),
     timestamp: Date.now()
   });
 });
 
-app.get('/ping', (req, res) => {
-  res.send('pong');
+app.get('/', (req, res) => {
+  res.send('VRChat Sponsor Bot is running! 🤖');
 });
 
 // VRChat API Endpoint - Returns role-grouped DataDictionary structure
