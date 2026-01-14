@@ -13,10 +13,10 @@ if (!DISCORD_TOKEN || !CLIENT_ID) {
 const commands = [
   new SlashCommandBuilder()
     .setName('changename')
-    .setDescription('Bind or update your display name')
+    .setDescription('Bind or update your VRChat name')
     .addStringOption(option =>
       option.setName('name')
-        .setDescription('Your new display name')
+        .setDescription('Your VRChat display name')
         .setRequired(true)
     )
 ];
