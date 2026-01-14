@@ -10,6 +10,11 @@ import { getDefaultAvatar } from './utils/external';
 import { logger } from './utils/logger';
 
 const app = express();
+
+// 信任反向代理（Nginx、Cloudflare 等）
+// 这样 express-rate-limit 可以正确识别真实用户 IP
+app.set('trust proxy', true);
+
 // Pterodactyl often uses SERVER_PORT, while others use PORT
 const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;
 
