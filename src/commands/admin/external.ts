@@ -1,5 +1,5 @@
 // /external 命令处理器
-import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, DISCORD_LIMITS, EMBED_COLORS } from '../../config/constants';
 import ExternalUser from '../../models/ExternalUser';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
@@ -27,7 +27,7 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
   const displayName = interaction.options.getString('display_name');
   const notes = interaction.options.getString('notes');
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     // 验证 VRChat 名称
@@ -145,7 +145,7 @@ export async function handleExternalUpdate(interaction: ChatInputCommandInteract
   const newDisplayName = interaction.options.getString('display_name', false);
   const newNotes = interaction.options.getString('notes', false);
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     // 查找用户
@@ -247,7 +247,7 @@ export async function handleExternalRemove(interaction: ChatInputCommandInteract
 
   const identifier = interaction.options.getString('identifier', true);
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     // 查找用户
@@ -314,7 +314,7 @@ export async function handleExternalList(interaction: ChatInputCommandInteractio
 
   const roleFilter = interaction.options.getString('role');
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     // 查询外部用户

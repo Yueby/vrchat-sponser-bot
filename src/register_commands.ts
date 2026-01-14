@@ -42,7 +42,7 @@ const commands = [
         )
     ),
 
-  // /admin - 管理员命令（包含 sync 和 unbind 子命令）
+  // /admin - 管理员命令（包含 sync、unbind、memory 子命令）
   new SlashCommandBuilder()
     .setName('admin')
     .setDescription('Administrator commands')
@@ -59,6 +59,20 @@ const commands = [
           option.setName('user')
             .setDescription('The user to unbind')
             .setRequired(true)
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('memory')
+        .setDescription('View or manage bot memory usage')
+        .addStringOption(option =>
+          option.setName('action')
+            .setDescription('Action to perform')
+            .setRequired(false)
+            .addChoices(
+              { name: 'View Status', value: 'status' },
+              { name: 'Clear Cache', value: 'clear' }
+            )
         )
     ),
 

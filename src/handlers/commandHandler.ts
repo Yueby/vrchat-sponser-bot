@@ -1,11 +1,12 @@
 // 命令路由处理器
-import { ChatInputCommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import {
     handleExternalAdd,
     handleExternalList,
     handleExternalRemove,
     handleExternalUpdate
 } from '../commands/admin/external';
+import { handleAdminMemory } from '../commands/admin/memory';
 import { handleAdminSync } from '../commands/admin/sync';
 import { handleAdminUnbind } from '../commands/admin/unbind';
 import { handleChangeName } from '../commands/changename';
@@ -41,6 +42,8 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
           await handleAdminSync(interaction);
         } else if (adminSubcommand === 'unbind') {
           await handleAdminUnbind(interaction);
+        } else if (adminSubcommand === 'memory') {
+          await handleAdminMemory(interaction);
         }
         break;
 
@@ -64,7 +67,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
       default:
         await interaction.reply({
           content: '❌ Unknown command',
-          ephemeral: true
+          flags: MessageFlags.Ephemeral
         });
     }
   } catch (error) {

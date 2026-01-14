@@ -1,5 +1,5 @@
 // /server api 命令处理
-import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { handleCommandError, requireGuild, requireOwner } from '../../utils/errors';
@@ -13,7 +13,7 @@ export async function handleServerApi(interaction: ChatInputCommandInteraction):
   if (!requireOwner(interaction)) return;
 
   const enabled = interaction.options.getBoolean('enabled', true);
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     await Guild.updateOne(

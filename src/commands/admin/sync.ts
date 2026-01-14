@@ -1,5 +1,5 @@
 // /admin sync 命令处理
-import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { bulkUpsertDiscordUsers } from '../../utils/database';
@@ -13,7 +13,7 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
   // 权限检查：仅管理员
   if (!requireAdmin(interaction)) return;
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const startTime = Date.now();

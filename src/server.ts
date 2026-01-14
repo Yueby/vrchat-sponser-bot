@@ -78,9 +78,22 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       return res.status(500).json({ error: 'Discord guild not in cache' });
     }
     
-    // 性能优化：批量预获取所有需要的成员
+    // 🚀 内存优化：按需获取成员，避免一次性缓存过多数据
+    // 只获取必要的成员数据
     try {
-      await discordGuild.members.fetch({ user: discordUserIds });
+      if (discordUserIds.length > 0) {
+        // 分批获取，避免一次性缓存过多数据
+        const batchSize = 100;
+        for (let i = 0; i < discordUserIds.length; i += batchSize) {
+          const batch = discordUserIds.slice(i, i + batchSize);
+          // 逐个获取成员（会自动缓存，但受缓存限制控制）
+          await Promise.all(
+            batch.map(userId => 
+              discordGuild.members.fetch(userId).catch(() => null)
+            )
+          );
+        }
+      }
     } catch (error) {
       logger.error('Failed to fetch members:', error);
       // 继续执行，使用缓存中已有的成员数据

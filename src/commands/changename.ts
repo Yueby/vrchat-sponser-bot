@@ -1,5 +1,5 @@
 // /changename 命令处理
-import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, COOLDOWNS, EMBED_COLORS } from '../config/constants';
 import DiscordUser from '../models/DiscordUser';
 import VRChatBinding from '../models/VRChatBinding';
@@ -34,7 +34,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
   if (!validation.valid) {
     await interaction.reply({
       content: `❌ ${validation.error}`,
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return;
   }
@@ -46,13 +46,13 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
       const timeLeft = Math.round((expirationTime - Date.now()) / 1000);
       await interaction.reply({
         content: `⏱️ Please wait **${timeLeft}** seconds before using this command again`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
       return;
     }
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     // 清理和格式化 VRChat 名称

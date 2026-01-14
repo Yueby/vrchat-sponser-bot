@@ -1,5 +1,5 @@
 // /admin unbind 命令处理
-import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import VRChatBinding from '../../models/VRChatBinding';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
@@ -13,7 +13,7 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
   if (!requireAdmin(interaction)) return;
 
   const targetUser = interaction.options.getUser('user', true);
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const result = await VRChatBinding.findOneAndDelete({

@@ -1,5 +1,5 @@
 // /whoami 命令处理
-import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../config/constants';
 import DiscordUser from '../models/DiscordUser';
 import VRChatBinding from '../models/VRChatBinding';
@@ -10,7 +10,7 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
   const guildId = requireGuild(interaction);
   if (!guildId) return;
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const userId = interaction.user.id;

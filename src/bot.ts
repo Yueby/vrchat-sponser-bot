@@ -1,15 +1,47 @@
-import { Client, GatewayIntentBits, Interaction } from 'discord.js';
+import { Client, GatewayIntentBits, Interaction, Options } from 'discord.js';
 import mongoose from 'mongoose';
 import { handleCommand } from './handlers/commandHandler';
 import { handleGuildCreate, handleGuildDelete, syncAllGuilds } from './handlers/guildEvents';
 import { handleMemberAdd, handleMemberRemove } from './handlers/memberEvents';
 import { logger } from './utils/logger';
+import { logMemoryReport, startMemoryMonitor } from './utils/memory';
 
-export const client = new Client({
+// 🚀 内存优化：配置缓存管理器和清理策略
+export const client: Client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers // Required for member events
-  ]
+  ],
+  // 配置缓存限制
+  makeCache: Options.cacheWithLimits({
+    // 限制成员缓存（最大内存优化点）
+    GuildMemberManager: {
+      maxSize: 200, // 每个服务器最多缓存 200 个成员
+      keepOverLimit: (member) => false // 允许清理所有成员
+    },
+    // 限制用户缓存
+    UserManager: {
+      maxSize: 200 // 最多缓存 200 个用户
+    },
+    // 限制消息缓存（我们不需要消息）
+    MessageManager: 0,
+    // 其他缓存使用默认值
+    ...Options.DefaultMakeCacheSettings
+  }),
+  // 清理策略：定期清理旧缓存
+  sweepers: {
+    ...Options.DefaultSweeperSettings,
+    // 每 30 分钟清理一次成员缓存
+    guildMembers: {
+      interval: 1800, // 30 分钟（秒）
+      filter: () => () => true // 清理所有成员（按需重新获取）
+    },
+    // 每 15 分钟清理一次用户缓存
+    users: {
+      interval: 900, // 15 分钟（秒）
+      filter: () => () => true // 清理所有用户（按需重新获取）
+    }
+  }
 });
 
 // Bot 启动时自动同步所有服务器
@@ -17,8 +49,16 @@ client.once('ready', async () => {
   logger.bot(`Bot logged in as ${client.user?.tag}`);
   logger.network(`Connected to ${client.guilds.cache.size} servers`);
   
-  // 自动同步所有服务器和成员
+  // 自动同步所有服务器
   await syncAllGuilds(client.guilds.cache);
+  
+  // 🚀 启动内存监控（每 5 分钟）
+  startMemoryMonitor(5);
+  
+  // 打印初始内存报告
+  setTimeout(() => {
+    logMemoryReport();
+  }, 10000); // 10 秒后打印
 });
 
 // Bot 加入新服务器

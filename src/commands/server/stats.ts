@@ -1,5 +1,5 @@
 // /server stats 命令处理
-import { ChatInputCommandInteraction, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags, PermissionFlagsBits } from 'discord.js';
 import { client } from '../../bot';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import DiscordUser from '../../models/DiscordUser';
@@ -14,11 +14,11 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
   // 权限检查：仅服务器所有者和管理员
   const member = interaction.guild!.members.cache.get(interaction.user.id);
   if (!member?.permissions.has(PermissionFlagsBits.Administrator) && interaction.guild!.ownerId !== interaction.user.id) {
-    await interaction.reply({ content: '❌ Only server administrators can use this command!', ephemeral: true });
+    await interaction.reply({ content: '❌ Only server administrators can use this command!', flags: MessageFlags.Ephemeral });
     return;
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const guild = await Guild.findOne({ guildId });

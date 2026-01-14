@@ -1,5 +1,5 @@
 // 统一的错误处理工具
-import { ChatInputCommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import mongoose from 'mongoose';
 import { logger } from './logger';
 
@@ -28,7 +28,7 @@ export async function handleCommandError(interaction: ChatInputCommandInteractio
   if (interaction.deferred || interaction.replied) {
     await interaction.editReply(errorMessage);
   } else {
-    await interaction.reply({ content: errorMessage, ephemeral: true });
+    await interaction.reply({ content: errorMessage, flags: MessageFlags.Ephemeral });
   }
 }
 
@@ -39,7 +39,7 @@ export function requireGuild(interaction: ChatInputCommandInteraction): string |
   if (!interaction.guildId) {
     interaction.reply({
       content: '❌ This command can only be used in a server!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return null;
   }
@@ -54,7 +54,7 @@ export function requireAdmin(interaction: ChatInputCommandInteraction): boolean 
   if (!member?.permissions.has('Administrator')) {
     interaction.reply({
       content: '❌ Only administrators can use this command!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return false;
   }
@@ -68,7 +68,7 @@ export function requireOwner(interaction: ChatInputCommandInteraction): boolean 
   if (interaction.guild!.ownerId !== interaction.user.id) {
     interaction.reply({
       content: '❌ Only the server owner can use this command!',
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
     return false;
   }

@@ -8,15 +8,15 @@ import { logger } from '../utils/logger';
 
 /**
  * 处理 Bot 启动时的服务器同步
+ * 🚀 内存优化：仅同步服务器记录，不批量获取成员
  */
 export async function syncAllGuilds(guilds: Map<string, DiscordGuild>): Promise<void> {
-  logger.sync('Syncing all guilds and members...');
+  logger.sync('Syncing all guilds...');
   let totalGuilds = 0;
-  let totalMembers = 0;
   
   for (const [guildId, guild] of guilds) {
     try {
-      // 确保 Guild 记录存在（仅存储核心配置）
+      // 仅确保 Guild 记录存在（不同步成员）
       await Guild.findOneAndUpdate(
         { guildId },
         {
@@ -27,31 +27,25 @@ export async function syncAllGuilds(guilds: Map<string, DiscordGuild>): Promise<
         { upsert: true, setDefaultsOnInsert: true } // apiEnabled 默认 true
       );
       
-      // 同步所有成员（使用批量操作提升性能）
-      await guild.members.fetch();
-      const members = Array.from(guild.members.cache.values());
-      const { upsertedCount, modifiedCount } = await bulkUpsertDiscordUsers(members, guildId);
-      const memberCount = upsertedCount + modifiedCount;
-      
       totalGuilds++;
-      totalMembers += memberCount;
-      logger.success(`Synced ${guild.name}: ${memberCount} members`);
+      logger.success(`Synced guild: ${guild.name}`);
     } catch (error) {
       logger.error(`Failed to sync guild ${guild.name}:`, error);
     }
   }
   
-  logger.celebrate(`Sync complete: ${totalGuilds} guilds, ${totalMembers} members`);
+  logger.celebrate(`Sync complete: ${totalGuilds} guilds (member sync on-demand)`);
 }
 
 /**
  * 处理 Bot 加入新服务器
+ * 🚀 内存优化：仅创建服务器记录，成员在使用时按需同步
  */
 export async function handleGuildCreate(guild: DiscordGuild): Promise<void> {
   try {
     logger.newGuild(`Bot joined new guild: ${guild.name} (${guild.id})`);
     
-    // 自动创建服务器记录（仅核心配置）
+    // 仅创建服务器记录（不同步成员）
     await Guild.create({
       guildId: guild.id,
       ownerId: guild.ownerId,
@@ -59,13 +53,7 @@ export async function handleGuildCreate(guild: DiscordGuild): Promise<void> {
       joinedAt: new Date()
     });
     
-    // 自动同步所有成员（使用批量操作）
-    await guild.members.fetch();
-    const members = Array.from(guild.members.cache.values());
-    const { upsertedCount, modifiedCount } = await bulkUpsertDiscordUsers(members, guild.id);
-    const memberCount = upsertedCount + modifiedCount;
-    
-    logger.success(`Guild setup complete: ${guild.name} (${memberCount} members synced)`);
+    logger.success(`Guild setup complete: ${guild.name} (members will sync on-demand)`);
   } catch (error) {
     logger.error(`Error setting up new guild ${guild.name}:`, error);
   }
