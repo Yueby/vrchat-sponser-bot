@@ -90,15 +90,24 @@ client.on('warn', (warning) => {
 
 // 🔧 错误处理：WebSocket 重连
 client.on('shardDisconnect', (event, shardId) => {
-  logger.warn(`Shard ${shardId} disconnected`, event);
+  logger.warn(`⚠️ Shard ${shardId} disconnected - Code: ${event.code}, Reason: ${event.reason || 'Unknown'}`);
+  if (event.code === 1000) {
+    logger.info('Normal closure');
+  } else if (event.code >= 4000) {
+    logger.error(`Discord error code ${event.code} - this may indicate a serious issue`);
+  }
 });
 
 client.on('shardReconnecting', (shardId) => {
-  logger.info(`Shard ${shardId} reconnecting...`);
+  logger.info(`🔄 Shard ${shardId} reconnecting...`);
 });
 
 client.on('shardResume', (shardId, replayedEvents) => {
-  logger.success(`Shard ${shardId} resumed (${replayedEvents} events replayed)`);
+  logger.success(`✅ Shard ${shardId} resumed (${replayedEvents} events replayed)`);
+});
+
+client.on('shardError', (error, shardId) => {
+  logger.error(`❌ Shard ${shardId} error:`, error);
 });
 
 // Database connection function

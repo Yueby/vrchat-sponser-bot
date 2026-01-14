@@ -38,21 +38,39 @@ const main = async () => {
 
 // 🔧 全局错误处理：未捕获的异常
 process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
+  logger.error('❌ Uncaught Exception:', error);
   logger.error('Stack:', error.stack);
+  logger.error('This should not happen! Please report this bug.');
   // 不立即退出，给 Bot 继续运行的机会
 });
 
 // 🔧 全局错误处理：未捕获的 Promise rejection
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise);
+  logger.error('❌ Unhandled Promise Rejection at:', promise);
   logger.error('Reason:', reason);
+  logger.error('This should not happen! Please report this bug.');
   // 不立即退出，给 Bot 继续运行的机会
+});
+
+// 🔧 监控进程退出
+process.on('exit', (code) => {
+  logger.warn(`⚠️ Process exiting with code: ${code}`);
+});
+
+// 🔧 其他信号
+process.on('SIGHUP', () => {
+  logger.warn('⚠️ Received SIGHUP signal');
+});
+
+process.on('SIGQUIT', () => {
+  logger.warn('⚠️ Received SIGQUIT signal');
 });
 
 // 🔧 优雅关闭：处理 SIGINT (Ctrl+C)
 process.on('SIGINT', async () => {
-  logger.info('Received SIGINT, shutting down gracefully...');
+  logger.warn('⚠️ Received SIGINT signal - shutting down gracefully...');
+  logger.info('Stack trace for debugging:');
+  console.trace();
   try {
     await client.destroy();
     logger.success('Discord client disconnected');
