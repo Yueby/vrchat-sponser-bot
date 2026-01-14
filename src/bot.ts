@@ -48,7 +48,7 @@ export const client: Client = new Client({
 client.once('ready', async () => {
   logger.bot(`Bot logged in as ${client.user?.tag}`);
   logger.network(`Connected to ${client.guilds.cache.size} servers`);
-  
+      
   // 自动同步所有服务器
   await syncAllGuilds(client.guilds.cache);
   
@@ -77,6 +77,28 @@ client.on('guildMemberRemove', handleMemberRemove);
 client.on('interactionCreate', async (interaction: Interaction) => {
   if (!interaction.isChatInputCommand()) return;
   await handleCommand(interaction);
+});
+
+// 🔧 错误处理：捕获 Discord.js 错误
+client.on('error', (error) => {
+  logger.error('Discord Client Error:', error);
+});
+
+client.on('warn', (warning) => {
+  logger.warn('Discord Client Warning:', warning);
+});
+
+// 🔧 错误处理：WebSocket 重连
+client.on('shardDisconnect', (event, shardId) => {
+  logger.warn(`Shard ${shardId} disconnected`, event);
+});
+
+client.on('shardReconnecting', (shardId) => {
+  logger.info(`Shard ${shardId} reconnecting...`);
+});
+
+client.on('shardResume', (shardId, replayedEvents) => {
+  logger.success(`Shard ${shardId} resumed (${replayedEvents} events replayed)`);
 });
 
 // Database connection function
