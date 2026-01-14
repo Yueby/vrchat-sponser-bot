@@ -167,6 +167,11 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       });
     });
     
+    // 如果没有任何数据，返回空对象
+    if (allRoles.size === 0) {
+      return res.json({});
+    }
+    
     // 构建最终结果（VRChat DataDictionary 格式）
     const result = {} as SponsorsApiResponse;
     Object.keys(roleGroups).forEach(role => {
