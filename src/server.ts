@@ -31,8 +31,21 @@ const apiLimiter = rateLimit({
 // Apply rate limiting to all /api/ paths
 app.use('/api/', apiLimiter);
 
+// 健康检查端点（用于容器平台检测）
 app.get('/', (req, res) => {
   res.send('VRChat Sponsor Bot is running! 🤖');
+});
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: Date.now()
+  });
+});
+
+app.get('/ping', (req, res) => {
+  res.send('pong');
 });
 
 // VRChat API Endpoint - Returns role-grouped DataDictionary structure
@@ -207,7 +220,21 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
 });
 
 export const startServer = () => {
-  app.listen(PORT, () => {
-    logger.info(`🌍 Web server running on port ${PORT}`);
+  const port = Number(PORT);
+  const server = app.listen(port, '0.0.0.0', () => {
+    logger.success(`Web server running on port ${port}`);
+    logger.success(`Server is ready and listening`);
   });
+  
+  server.on('error', (error: NodeJS.ErrnoException) => {
+    if (error.code === 'EADDRINUSE') {
+      logger.error(`Port ${port} is already in use`);
+      process.exit(1);
+    } else {
+      logger.error('Server error:', error);
+      process.exit(1);
+    }
+  });
+  
+  return server;
 };

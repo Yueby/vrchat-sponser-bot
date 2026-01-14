@@ -9,16 +9,19 @@ dotenv.config();
 const main = async () => {
   try {
     logger.info('🚀 Starting VRChat Sponsor Bot...');
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
     // 1. Start Web Server
     logger.info('Step 1/3: Starting web server...');
     startServer();
-    logger.success('Web server started');
+    // 等待服务器启动
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    logger.success('✅ Web server initialized');
 
     // 2. Connect to Database
     logger.info('Step 2/3: Connecting to database...');
     await connectDB();
-    logger.success('Database connected');
+    logger.success('✅ Database connected');
 
     // 3. Login Bot
     logger.info('Step 3/3: Logging in to Discord...');
@@ -29,7 +32,11 @@ const main = async () => {
     }
 
     await client.login(token);
-    logger.success('Discord login successful');
+    logger.success('✅ Discord login successful');
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    logger.success('🎉 ALL SYSTEMS ONLINE - BOT IS READY!');
+    logger.success('Server started successfully!'); // 平台可能检查这个
+    logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   } catch (error) {
     logger.error('Error during startup:', error);
     throw error;
