@@ -117,27 +117,17 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
       .addFields(
         {
           name: '🎮 VRChat Information',
-          value: `**Name:** ${cleanName}${isNewBinding ? '\n*First time binding*' : ''}`,
-          inline: true
-        },
-        {
-          name: '👤 Discord Information',
-          value: `**User:** ${username}\n**ID:** \`${userId}\``,
-          inline: true
+          value: `**Name:** ${cleanName}${isNewBinding ? '\n\n*First time binding - Welcome!*' : ''}`,
+          inline: false
         },
         {
           name: '🎭 Current Roles',
           value: roleNames.length > 0 ? roleNames.map(r => `• ${r}`).join('\n') : 'No roles',
-          inline: false
-        },
-        {
-          name: '💎 Membership Status',
-          value: isMemberBooster(member) ? '✨ **Server Booster**' : '👤 **Member**',
           inline: true
         },
         {
-          name: '⏰ Last Updated',
-          value: `<t:${timestamp}:R>`,
+          name: '💎 Membership Status',
+          value: isMemberBooster(member) ? '**Server Booster**' : '**Member**',
           inline: true
         }
       )

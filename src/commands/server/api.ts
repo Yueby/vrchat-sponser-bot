@@ -27,7 +27,7 @@ export async function handleServerApi(interaction: ChatInputCommandInteraction):
         name: interaction.guild!.name,
         iconURL: interaction.guild!.iconURL() || undefined
       })
-      .setTitle(enabled ? '✅ API Access Enabled' : '🔒 API Access Disabled')
+      .setTitle(enabled ? '🟢 API Access Enabled' : '🔴 API Access Disabled')
       .setDescription(
         enabled
           ? 'The VRChat API endpoint is now **accessible**.\nVRChat worlds can now fetch sponsor data from this server.'

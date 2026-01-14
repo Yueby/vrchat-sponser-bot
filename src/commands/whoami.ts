@@ -38,11 +38,7 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
         name: `${member?.displayName || username}`,
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
       })
-      .setTitle('👤 Your Profile Information')
-      .setDescription(
-        `**Discord:** ${username}\n` +
-        `**User ID:** \`${userId}\``
-      )
+      .setTitle('👤 Your Profile')
       .setColor(member?.displayColor || EMBED_COLORS.INFO)
       .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
       .addFields(
@@ -52,7 +48,7 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
             ? `**Name:** ${vrchatBinding.vrchatName}\n` +
               `**Bound Since:** <t:${Math.floor(vrchatBinding.firstBindTime.getTime() / 1000)}:D> (${bindDays} days)\n` +
               `**Last Update:** <t:${Math.floor(vrchatBinding.bindTime.getTime() / 1000)}:R>`
-            : '❌ **Not bound**\n*Use `/changename` to bind your VRChat name*',
+            : '🔴 **Not bound**\n*Use `/changename` to bind your VRChat name*',
           inline: false 
         },
         { 
@@ -65,14 +61,14 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
         { 
           name: '📊 Membership Info', 
           value: 
-            `${discordUser?.isBooster ? '💎' : '👤'} ${discordUser?.isBooster ? '**Server Booster**' : 'Member'}\n` +
-            `📅 **Joined:** ${discordUser?.joinedAt ? `<t:${Math.floor(discordUser.joinedAt.getTime() / 1000)}:D>` : 'Unknown'}\n` +
-            `⏱️ **Support Days:** ${supportDays} days`,
+            `${discordUser?.isBooster ? '**Server Booster**' : '**Member**'}\n` +
+            `**Joined:** ${discordUser?.joinedAt ? `<t:${Math.floor(discordUser.joinedAt.getTime() / 1000)}:D>` : 'Unknown'}\n` +
+            `**Support Days:** ${supportDays} days`,
           inline: true 
         }
       )
       .setFooter({ 
-        text: `Member of ${interaction.guild!.name}`,
+        text: `${interaction.guild!.name} • User ID: ${userId}`,
         iconURL: interaction.guild!.iconURL({ size: AVATAR_SIZES.SMALL }) || undefined
       })
       .setTimestamp();

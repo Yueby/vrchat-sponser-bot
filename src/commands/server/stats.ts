@@ -42,11 +42,10 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
         name: `${guildInfo.name}`,
         iconURL: guildInfo.iconURL() || undefined
       })
-      .setTitle('📊 Server Statistics & Configuration')
+      .setTitle('📊 Server Statistics')
       .setDescription(
-        `Server ID: \`${guildId}\`\n` +
-        `Owner: <@${guild.ownerId}>\n` +
-        `Bot Active: **${botJoinedDays}** days`
+        `**Owner:** <@${guild.ownerId}>\n` +
+        `**Bot Active:** ${botJoinedDays} days`
       )
       .setColor(guild.apiEnabled ? EMBED_COLORS.SUCCESS : EMBED_COLORS.INFO)
       .setThumbnail(guildInfo.iconURL({ size: AVATAR_SIZES.LARGE }) || null)
@@ -54,29 +53,27 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
         { 
           name: '📈 Database Statistics', 
           value: 
-            `👥 **Members:** ${memberCount}\n` +
-            `🔗 **Bindings:** ${bindingCount}\n` +
-            `📊 **Bind Rate:** ${bindingRate}%`,
+            `**Members:** ${memberCount}\n` +
+            `**Bindings:** ${bindingCount}\n` +
+            `**Bind Rate:** ${bindingRate}%`,
           inline: true 
         },
         { 
-          name: '⚙️ API Configuration', 
-          value: 
-            `Status: ${guild.apiEnabled ? '✅ **Enabled**' : '❌ **Disabled**'}\n` +
-            `Endpoint: \`/api/vrchat/sponsors/${guildId}\``,
+          name: '⚙️ API Status', 
+          value: guild.apiEnabled ? '🟢 **Enabled**' : '🔴 **Disabled**',
           inline: true 
         },
         { 
           name: '🕐 Activity Timeline', 
           value: 
-            `🔄 **Last Sync:** ${guild.lastSyncAt ? `<t:${Math.floor(guild.lastSyncAt.getTime() / 1000)}:R>` : 'Never'}\n` +
-            `📞 **Last API Call:** ${guild.lastApiCallAt ? `<t:${Math.floor(guild.lastApiCallAt.getTime() / 1000)}:R>` : 'Never'}\n` +
-            `📅 **Bot Joined:** <t:${Math.floor(guild.joinedAt.getTime() / 1000)}:D>`,
+            `**Last Sync:** ${guild.lastSyncAt ? `<t:${Math.floor(guild.lastSyncAt.getTime() / 1000)}:R>` : 'Never'}\n` +
+            `**Last API Call:** ${guild.lastApiCallAt ? `<t:${Math.floor(guild.lastApiCallAt.getTime() / 1000)}:R>` : 'Never'}\n` +
+            `**Bot Joined:** <t:${Math.floor(guild.joinedAt.getTime() / 1000)}:D>`,
           inline: false 
         }
       )
       .setFooter({ 
-        text: `Requested by ${interaction.user.username}`,
+        text: `Requested by ${interaction.user.username} • Server ID: ${guildId}`,
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTimestamp();
