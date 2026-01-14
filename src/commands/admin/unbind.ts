@@ -1,6 +1,6 @@
 // /admin unbind 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { EMBED_COLORS } from '../../config/constants';
+import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import VRChatBinding from '../../models/VRChatBinding';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
 import { logger } from '../../utils/logger';
@@ -28,14 +28,14 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
       const embed = new EmbedBuilder()
         .setAuthor({
           name: 'Admin Action: Unbind User',
-          iconURL: interaction.user.displayAvatarURL({ size: 64 })
+          iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
         .setTitle('✅ Unbind Successful')
         .setDescription(
           `The VRChat binding for **${targetUser.username}** has been removed.`
         )
         .setColor(EMBED_COLORS.ERROR)
-        .setThumbnail(targetUser.displayAvatarURL({ size: 128 }))
+        .setThumbnail(targetUser.displayAvatarURL({ size: AVATAR_SIZES.MEDIUM }))
         .addFields(
           {
             name: '👤 Target User',
@@ -57,7 +57,7 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
         )
         .setFooter({
           text: `Performed by ${interaction.user.username} • ${interaction.guild!.name}`,
-          iconURL: interaction.user.displayAvatarURL({ size: 64 })
+          iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
         .setTimestamp();
 
@@ -67,14 +67,14 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
       const embed = new EmbedBuilder()
         .setAuthor({
           name: 'Admin Action: Check Binding',
-          iconURL: interaction.user.displayAvatarURL({ size: 64 })
+          iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
         .setTitle('ℹ️ No Binding Found')
         .setDescription(
           `User **${targetUser.username}** has no VRChat binding in this server.`
         )
         .setColor(EMBED_COLORS.INFO)
-        .setThumbnail(targetUser.displayAvatarURL({ size: 128 }))
+        .setThumbnail(targetUser.displayAvatarURL({ size: AVATAR_SIZES.MEDIUM }))
         .addFields({
           name: '💡 Tip',
           value: 'Users must use `/changename` to create a VRChat binding first.',
@@ -82,7 +82,7 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
         })
         .setFooter({
           text: `Checked by ${interaction.user.username} • ${interaction.guild!.name}`,
-          iconURL: interaction.user.displayAvatarURL({ size: 64 })
+          iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
         .setTimestamp();
 

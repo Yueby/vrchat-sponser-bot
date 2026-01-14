@@ -1,6 +1,6 @@
 // /admin sync 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { EMBED_COLORS } from '../../config/constants';
+import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { bulkUpsertDiscordUsers } from '../../utils/database';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
@@ -36,14 +36,14 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
     const embed = new EmbedBuilder()
       .setAuthor({
         name: 'Admin Action: Manual Sync',
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTitle('✅ Database Sync Complete')
       .setDescription(
         `Successfully synchronized all member data with the database.`
       )
       .setColor(EMBED_COLORS.SUCCESS)
-      .setThumbnail(interaction.guild!.iconURL({ size: 128 }) || null)
+      .setThumbnail(interaction.guild!.iconURL({ size: AVATAR_SIZES.MEDIUM }) || null)
       .addFields(
         {
           name: '📊 Sync Statistics',
@@ -72,7 +72,7 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
       )
       .setFooter({
         text: `Performed by ${interaction.user.username} • ${interaction.guild!.name}`,
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTimestamp();
 

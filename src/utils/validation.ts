@@ -1,9 +1,10 @@
 // 输入验证工具
+import { VRCHAT_NAME } from '../config/constants';
 
 /**
  * VRChat 名称验证规则
- * - 长度：1-32 字符
- * - 允许字符：字母、数字、空格、下划线、连字符
+ * - 长度：1-64 字符
+ * - VRChat 支持几乎所有 Unicode 字符，不限制字符类型
  */
 export function validateVRChatName(name: string): { valid: boolean; error?: string } {
   if (!name || name.trim().length === 0) {
@@ -12,16 +13,15 @@ export function validateVRChatName(name: string): { valid: boolean; error?: stri
 
   const trimmedName = name.trim();
 
-  if (trimmedName.length > 32) {
-    return { valid: false, error: 'VRChat name must be 32 characters or less' };
+  if (trimmedName.length < VRCHAT_NAME.MIN_LENGTH) {
+    return { valid: false, error: `VRChat name must be at least ${VRCHAT_NAME.MIN_LENGTH} character` };
   }
 
-  // 允许字母、数字、空格、下划线、连字符、常见 Unicode 字符
-  const validNameRegex = /^[\w\s\-\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff]+$/;
-  if (!validNameRegex.test(trimmedName)) {
-    return { valid: false, error: 'VRChat name contains invalid characters' };
+  if (trimmedName.length > VRCHAT_NAME.MAX_LENGTH) {
+    return { valid: false, error: `VRChat name must be ${VRCHAT_NAME.MAX_LENGTH} characters or less` };
   }
 
+  // VRChat 允许所有 Unicode 字符，只验证长度
   return { valid: true };
 }
 

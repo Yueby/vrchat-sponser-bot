@@ -22,7 +22,7 @@ export const API_LIMITS = {
  */
 export const VRCHAT_NAME = {
   MIN_LENGTH: 1,
-  MAX_LENGTH: 32
+  MAX_LENGTH: 64
 } as const;
 
 /**
@@ -40,4 +40,29 @@ export const EMBED_COLORS = {
   ERROR: 0xED4245,    // 红色 - 错误/删除
   INFO: 0x5865F2,     // 蓝色 - 信息展示
   WARNING: 0xFEE75C   // 黄色 - 警告信息
+} as const;
+
+/**
+ * 头像尺寸配置
+ */
+export const AVATAR_SIZES = {
+  SMALL: 64,    // 用于 footer/author 图标
+  MEDIUM: 128,  // 用于缩略图
+  LARGE: 256    // 用于主要显示
+} as const;
+
+/**
+ * 服务器配置
+ */
+export const SERVER = {
+  DEFAULT_PORT: 3000  // 默认端口
+} as const;
+
+/**
+ * Discord Embed 限制
+ */
+export const DISCORD_LIMITS = {
+  EMBED_FIELD_VALUE_MAX: 1024,  // Embed field value 最大长度
+  EMBED_DESCRIPTION_MAX: 4096,  // Embed description 最大长度
+  EMBED_TOTAL_MAX: 6000         // Embed 总字符数限制
 } as const;

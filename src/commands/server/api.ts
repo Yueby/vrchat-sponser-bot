@@ -1,6 +1,6 @@
 // /server api 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { EMBED_COLORS } from '../../config/constants';
+import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { handleCommandError, requireGuild, requireOwner } from '../../utils/errors';
 import { logger } from '../../utils/logger';
@@ -53,7 +53,7 @@ export async function handleServerApi(interaction: ChatInputCommandInteraction):
       )
       .setFooter({
         text: `Changed by ${interaction.user.username} • ${interaction.guild!.name}`,
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTimestamp();
 

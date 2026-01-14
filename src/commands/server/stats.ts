@@ -1,7 +1,7 @@
 // /server stats 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { client } from '../../bot';
-import { EMBED_COLORS } from '../../config/constants';
+import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import DiscordUser from '../../models/DiscordUser';
 import Guild from '../../models/Guild';
 import VRChatBinding from '../../models/VRChatBinding';
@@ -49,7 +49,7 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
         `Bot Active: **${botJoinedDays}** days`
       )
       .setColor(guild.apiEnabled ? EMBED_COLORS.SUCCESS : EMBED_COLORS.INFO)
-      .setThumbnail(guildInfo.iconURL({ size: 256 }) || null)
+      .setThumbnail(guildInfo.iconURL({ size: AVATAR_SIZES.LARGE }) || null)
       .addFields(
         { 
           name: '📈 Database Statistics', 
@@ -77,7 +77,7 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
       )
       .setFooter({ 
         text: `Requested by ${interaction.user.username}`,
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTimestamp();
 

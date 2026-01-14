@@ -1,6 +1,7 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import { client } from './bot';
+import { API_LIMITS, AVATAR_SIZES, SERVER } from './config/constants';
 import DiscordUser from './models/DiscordUser';
 import ExternalUser from './models/ExternalUser';
 import Guild from './models/Guild';
@@ -16,12 +17,12 @@ const app = express();
 app.set('trust proxy', true);
 
 // Pterodactyl often uses SERVER_PORT, while others use PORT
-const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;
+const PORT = process.env.SERVER_PORT || process.env.PORT || SERVER.DEFAULT_PORT;
 
-// API rate limiting: max 180 requests per minute
+// API rate limiting
 const apiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  limit: 180, // Limit each IP to 180 requests per window
+  windowMs: API_LIMITS.RATE_LIMIT_WINDOW,
+  limit: API_LIMITS.RATE_LIMIT_MAX,
   message: { error: 'Too many requests, please try again later.' },
   standardHeaders: 'draft-8', // Use draft-8 RateLimit header standard
   legacyHeaders: false, // Disable X-RateLimit-* headers
@@ -99,7 +100,7 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       
       // 实时获取头像
       const user = client.users.cache.get(binding.discordUserId);
-      const avatar = user?.displayAvatarURL({ size: 256 }) || '';
+      const avatar = user?.displayAvatarURL({ size: AVATAR_SIZES.LARGE }) || '';
       
       // 实时获取角色名称
       const roleNames: string[] = [];
@@ -144,7 +145,7 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       let avatar = getDefaultAvatar();
       if (externalUser.discordUserId) {
         const user = client.users.cache.get(externalUser.discordUserId);
-        avatar = user?.displayAvatarURL({ size: 256 }) || avatar;
+        avatar = user?.displayAvatarURL({ size: AVATAR_SIZES.LARGE }) || avatar;
       }
       
       // 计算支持天数

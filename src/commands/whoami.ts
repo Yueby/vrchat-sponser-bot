@@ -1,6 +1,6 @@
 // /whoami 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { EMBED_COLORS } from '../config/constants';
+import { AVATAR_SIZES, EMBED_COLORS } from '../config/constants';
 import DiscordUser from '../models/DiscordUser';
 import VRChatBinding from '../models/VRChatBinding';
 import { getMemberRoleNames } from '../utils/discord';
@@ -36,7 +36,7 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
     const embed = new EmbedBuilder()
       .setAuthor({ 
         name: `${member?.displayName || username}`,
-        iconURL: interaction.user.displayAvatarURL({ size: 256 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
       })
       .setTitle('👤 Your Profile Information')
       .setDescription(
@@ -44,7 +44,7 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
         `**User ID:** \`${userId}\``
       )
       .setColor(member?.displayColor || EMBED_COLORS.INFO)
-      .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
+      .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
       .addFields(
         { 
           name: '🎮 VRChat Information', 
@@ -73,7 +73,7 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
       )
       .setFooter({ 
         text: `Member of ${interaction.guild!.name}`,
-        iconURL: interaction.guild!.iconURL({ size: 64 }) || undefined
+        iconURL: interaction.guild!.iconURL({ size: AVATAR_SIZES.SMALL }) || undefined
       })
       .setTimestamp();
 

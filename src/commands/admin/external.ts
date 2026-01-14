@@ -1,6 +1,6 @@
 // /external 命令处理器
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { EMBED_COLORS } from '../../config/constants';
+import { AVATAR_SIZES, DISCORD_LIMITS, EMBED_COLORS } from '../../config/constants';
 import ExternalUser from '../../models/ExternalUser';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
 import {
@@ -84,7 +84,7 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
     const embed = new EmbedBuilder()
       .setAuthor({
         name: 'Admin Action: Add External User',
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTitle('✅ External User Added')
       .setDescription(`Successfully added external user **${cleanVrchatName}**`)
@@ -103,7 +103,7 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
       )
       .setFooter({
         text: `Added by ${interaction.user.username} • ${interaction.guild!.name}`,
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTimestamp();
 
@@ -118,7 +118,7 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
     if (notes) {
       embed.addFields({
         name: '📝 Notes',
-        value: notes.substring(0, 1024),
+        value: notes.substring(0, DISCORD_LIMITS.EMBED_FIELD_VALUE_MAX),
         inline: false
       });
     }
@@ -206,7 +206,7 @@ export async function handleExternalUpdate(interaction: ChatInputCommandInteract
     const embed = new EmbedBuilder()
       .setAuthor({
         name: 'Admin Action: Update External User',
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTitle('✅ External User Updated')
       .setDescription(`Successfully updated external user **${user.vrchatName}**`)
@@ -225,7 +225,7 @@ export async function handleExternalUpdate(interaction: ChatInputCommandInteract
       )
       .setFooter({
         text: `Updated by ${interaction.user.username} • ${interaction.guild!.name}`,
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTimestamp();
 
@@ -268,7 +268,7 @@ export async function handleExternalRemove(interaction: ChatInputCommandInteract
     const embed = new EmbedBuilder()
       .setAuthor({
         name: 'Admin Action: Remove External User',
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTitle('✅ External User Removed')
       .setDescription(`Successfully removed external user **${vrchatName}**`)
@@ -292,7 +292,7 @@ export async function handleExternalRemove(interaction: ChatInputCommandInteract
       )
       .setFooter({
         text: `Removed by ${interaction.user.username} • ${interaction.guild!.name}`,
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTimestamp();
 
@@ -359,7 +359,7 @@ export async function handleExternalList(interaction: ChatInputCommandInteractio
       .setColor(EMBED_COLORS.INFO)
       .setFooter({
         text: `Page ${page + 1}/${totalPages} • Total: ${users.length} users • Requested by ${interaction.user.username}`,
-        iconURL: interaction.user.displayAvatarURL({ size: 64 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTimestamp();
 

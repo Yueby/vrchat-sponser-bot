@@ -1,6 +1,6 @@
 // /changename 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { COOLDOWNS, EMBED_COLORS } from '../config/constants';
+import { AVATAR_SIZES, COOLDOWNS, EMBED_COLORS } from '../config/constants';
 import DiscordUser from '../models/DiscordUser';
 import VRChatBinding from '../models/VRChatBinding';
 import { getMemberRoleIds, getMemberRoleNames, isMemberBooster } from '../utils/discord';
@@ -104,7 +104,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
     const embed = new EmbedBuilder()
       .setAuthor({
         name: member.displayName,
-        iconURL: interaction.user.displayAvatarURL({ size: 256 })
+        iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
       })
       .setTitle(isNewBinding ? '✨ VRChat Binding Created' : '✅ VRChat Name Updated')
       .setDescription(
@@ -113,7 +113,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
           : `Your VRChat name has been **updated** successfully.`
       )
       .setColor(member.displayColor || EMBED_COLORS.SUCCESS)
-      .setThumbnail(interaction.user.displayAvatarURL({ size: 256 }))
+      .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
       .addFields(
         {
           name: '🎮 VRChat Information',
@@ -143,7 +143,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
       )
       .setFooter({
         text: `${interaction.guild!.name} • Use /whoami to view full profile`,
-        iconURL: interaction.guild!.iconURL({ size: 64 }) || undefined
+        iconURL: interaction.guild!.iconURL({ size: AVATAR_SIZES.SMALL }) || undefined
       })
       .setTimestamp();
 

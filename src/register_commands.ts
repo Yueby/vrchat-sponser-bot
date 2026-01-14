@@ -168,7 +168,7 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
       { body: commands },
     );
 
-    logger.success('✅ Successfully reloaded application (/) commands.');
+    logger.success('Successfully reloaded application (/) commands.');
   } catch (error) {
     logger.error('❌ Failed to register commands:', error);
     process.exit(1);
