@@ -9,32 +9,32 @@ importers:
   .:
     dependencies:
       discord.js:
-        specifier: latest
+        specifier: ^14.17.3
         version: 14.25.1
       dotenv:
-        specifier: latest
+        specifier: ^17.2.3
         version: 17.2.3
       express:
-        specifier: latest
+        specifier: ^5.2.1
         version: 5.2.1
       express-rate-limit:
-        specifier: latest
+        specifier: ^8.2.1
         version: 8.2.1(express@5.2.1)
       mongoose:
-        specifier: latest
+        specifier: ^9.1.3
         version: 9.1.3
     devDependencies:
       '@types/express':
-        specifier: latest
+        specifier: ^5.0.6
         version: 5.0.6
       '@types/node':
-        specifier: latest
+        specifier: ^25.0.8
         version: 25.0.8
       ts-node:
-        specifier: latest
+        specifier: ^10.9.2
         version: 10.9.2(@types/node@25.0.8)(typescript@5.9.3)
       typescript:
-        specifier: latest
+        specifier: ^5.8.2
         version: 5.9.3
 
 packages:

@@ -4,6 +4,8 @@ import { client } from './bot';
 import DiscordUser from './models/DiscordUser';
 import Guild from './models/Guild';
 import VRChatBinding from './models/VRChatBinding';
+import { SponsorData, SponsorsApiResponse } from './types/api';
+import { logger } from './utils/logger';
 
 const app = express();
 // Pterodactyl often uses SERVER_PORT, while others use PORT
@@ -65,8 +67,16 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       return res.status(500).json({ error: 'Discord guild not in cache' });
     }
     
+    // 性能优化：批量预获取所有需要的成员
+    try {
+      await discordGuild.members.fetch({ user: discordUserIds });
+    } catch (error) {
+      logger.error('Failed to fetch members:', error);
+      // 继续执行，使用缓存中已有的成员数据
+    }
+    
     // 按角色分组
-    const roleGroups: Record<string, any[]> = {};
+    const roleGroups: Record<string, SponsorData[]> = {};
     const allRoles = new Set<string>();
     
     bindings.forEach(binding => {
@@ -91,7 +101,7 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       
       // 按角色分组（跳过没有角色的用户）
       if (roleNames.length > 0) {
-        const userData = {
+        const userData: SponsorData = {
           vrchatName: binding.vrchatName,
           displayName,
           avatar,
@@ -111,7 +121,7 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     });
     
     // 构建最终结果（VRChat DataDictionary 格式）
-    const result: Record<string, any> = {};
+    const result = {} as SponsorsApiResponse;
     Object.keys(roleGroups).forEach(role => {
       const group = roleGroups[role];
       const roleData: Record<string, any> = {};
@@ -125,13 +135,13 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     
     res.json(result);
   } catch (error) {
-    console.error('VRChat API Error:', error);
+    logger.error('VRChat API Error:', error);
     res.status(500).json({ error: 'Failed to fetch sponsors' });
   }
 });
 
 export const startServer = () => {
   app.listen(PORT, () => {
-    console.log(`🌍 Web server running on port ${PORT}`);
+    logger.info(`🌍 Web server running on port ${PORT}`);
   });
 };
