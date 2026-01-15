@@ -49,26 +49,22 @@ export async function updateCloudflareWorker(): Promise<void> {
   }
   
   try {
-    logger.info('🌐 Updating Cloudflare Worker environment variable...');
+    logger.info('🌐 Updating Cloudflare Worker secret...');
     logger.info(`   Current Replit URL: ${replitUrl}`);
     
-    // 使用 Cloudflare Workers Script API 更新环境变量
-    const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/settings`;
+    // 使用 Secrets API 更新 Worker secret
+    const secretUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/secrets`;
     
-    const response = await fetch(apiUrl, {
-      method: 'PATCH',
+    const response = await fetch(secretUrl, {
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        bindings: [
-          {
-            type: 'plain_text',
-            name: 'REPLIT_URL',
-            text: replitUrl
-          }
-        ]
+        name: 'REPLIT_URL',
+        text: replitUrl,
+        type: 'secret_text'
       })
     });
     
