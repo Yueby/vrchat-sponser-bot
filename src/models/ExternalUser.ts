@@ -30,4 +30,7 @@ ExternalUserSchema.index({ vrchatName: 1, guildId: 1 }, { unique: true });
 // 创建稀疏索引：discordUserId + guildId 唯一（仅当 discordUserId 存在时）
 ExternalUserSchema.index({ discordUserId: 1, guildId: 1 }, { unique: true, sparse: true });
 
+// 优化排序查询性能：按 guildId 查询并按 addedAt 排序
+ExternalUserSchema.index({ guildId: 1, addedAt: -1 });
+
 export default mongoose.model<IExternalUser>('ExternalUser', ExternalUserSchema);

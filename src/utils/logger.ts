@@ -10,12 +10,20 @@ export enum LogLevel {
 
 class Logger {
   private level: LogLevel = LogLevel.INFO;
+  private showTimestamp: boolean = true;
 
   /**
    * 设置日志级别
    */
   setLevel(level: LogLevel): void {
     this.level = level;
+  }
+
+  /**
+   * 设置是否显示时间戳
+   */
+  setShowTimestamp(show: boolean): void {
+    this.showTimestamp = show;
   }
 
   /**
@@ -32,7 +40,8 @@ class Logger {
     const argsStr = args.length > 0 ? ' ' + args.map(arg => 
       typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
     ).join(' ') : '';
-    return `[${this.timestamp()}] [${level}] ${message}${argsStr}`;
+    const timestampStr = this.showTimestamp ? `[${this.timestamp()}] ` : '';
+    return `${timestampStr}[${level}] ${message}${argsStr}`;
   }
 
   /**
@@ -120,4 +129,9 @@ if (process.env.LOG_LEVEL) {
   if (level in LogLevel) {
     logger.setLevel(LogLevel[level as keyof typeof LogLevel]);
   }
+}
+
+// 从环境变量设置是否显示时间戳
+if (process.env.LOG_TIMESTAMP === 'false') {
+  logger.setShowTimestamp(false);
 }

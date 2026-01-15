@@ -1,5 +1,6 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
+import mongoose from 'mongoose';
 import { client } from './bot';
 import { API_LIMITS, AVATAR_SIZES, SERVER } from './config/constants';
 import DiscordUser from './models/DiscordUser';
@@ -37,10 +38,22 @@ app.get('/ping', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok',
+  const isDbConnected = mongoose.connection.readyState === 1;
+  const isBotOnline = client.isReady();
+  
+  const allHealthy = isDbConnected && isBotOnline;
+  const status = allHealthy ? 'ok' : 'degraded';
+  const statusCode = allHealthy ? 200 : 503;
+  
+  res.status(statusCode).json({ 
+    status,
     uptime: Math.floor(process.uptime()),
-    timestamp: Date.now()
+    timestamp: Date.now(),
+    services: {
+      database: isDbConnected ? 'connected' : 'disconnected',
+      discord: isBotOnline ? 'online' : 'offline',
+      guilds: client.guilds.cache.size
+    }
   });
 });
 
@@ -51,9 +64,10 @@ app.get('/', (req, res) => {
 // VRChat API Endpoint - Returns role-grouped DataDictionary structure
 // Path parameter: guildId - Discord server ID
 app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
+  const { guildId } = req.params;
+  const startTime = Date.now();
+  
   try {
-    const { guildId } = req.params;
-    
     // 检查服务器是否存在且允许 API 访问
     const guild = await Guild.findOne({ guildId });
     if (!guild) {
@@ -68,17 +82,18 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     await Guild.updateOne({ guildId }, { lastApiCallAt: new Date() });
     
     // 查询该服务器的绑定数据（服务器成员）
-    const bindings = await VRChatBinding.find({ guildId }).sort({ bindTime: -1 });
+    // 使用 .lean() 返回纯 JS 对象，提升性能 30-50%
+    const bindings = await VRChatBinding.find({ guildId }).sort({ bindTime: -1 }).lean();
     
     // 查询外部用户数据
-    const externalUsers = await ExternalUser.find({ guildId }).sort({ addedAt: -1 });
+    const externalUsers = await ExternalUser.find({ guildId }).sort({ addedAt: -1 }).lean();
     
     // 获取 Discord 用户数据（roles）
     const discordUserIds = bindings.map(b => b.discordUserId);
     const discordUsers = await DiscordUser.find(
       { userId: { $in: discordUserIds }, guildId },
       'userId roles isBooster joinedAt'
-    );
+    ).lean();
     
     // 创建查找映射
     const discordUserMap = new Map(
@@ -201,20 +216,25 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     
     // 构建最终结果（VRChat DataDictionary 格式）
     const result = {} as SponsorsApiResponse;
-    Object.keys(roleGroups).forEach(role => {
-      const group = roleGroups[role];
+    for (const [role, group] of Object.entries(roleGroups)) {
       const roleData: Record<string, SponsorData> = {};
       group.forEach((user, index) => {
         roleData[index.toString()] = user;
       });
       result[role] = roleData;
-    });
+    }
     
     result.allRoles = Array.from(allRoles);
     
+    // 记录 API 请求日志
+    const totalUsers = bindings.length + externalUsers.length;
+    const duration = Date.now() - startTime;
+    logger.info(`API request: guild=${guildId}, users=${totalUsers}, roles=${allRoles.size}, duration=${duration}ms`);
+    
     res.json(result);
   } catch (error) {
-    logger.error('VRChat API Error:', error);
+    const duration = Date.now() - startTime;
+    logger.error(`API Error for guild ${guildId} (duration: ${duration}ms):`, error);
     res.status(500).json({ error: 'Failed to fetch sponsors' });
   }
 });
@@ -222,8 +242,7 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
 export const startServer = () => {
   const port = Number(PORT);
   const server = app.listen(port, '0.0.0.0', () => {
-    logger.success(`Web server running on port ${port}`);
-    logger.success(`Server is ready and listening`);
+    logger.success(`Web server listening on port ${port}`);
   });
   
   server.on('error', (error: NodeJS.ErrnoException) => {

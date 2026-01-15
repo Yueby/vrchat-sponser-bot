@@ -1,5 +1,6 @@
 // 内存监控和缓存管理工具
 import { client } from '../bot';
+import { MONITORING } from '../config/constants';
 import { logger } from './logger';
 
 /**
@@ -57,7 +58,7 @@ export function clearCaches() {
 /**
  * 启动内存监控
  */
-export function startMemoryMonitor(intervalMinutes: number = 5) {
+export function startMemoryMonitor(intervalMinutes: number = MONITORING.MEMORY_CHECK_INTERVAL) {
   const intervalMs = intervalMinutes * 60 * 1000;
   
   setInterval(() => {
@@ -69,15 +70,15 @@ export function startMemoryMonitor(intervalMinutes: number = 5) {
       `Cache: ${cache.guilds} guilds, ${cache.members} members, ${cache.users} users`
     );
     
-    // 🚨 内存警告：超过 200 MB
-    if (memory.heapUsed > 200) {
+    // 🚨 内存警告
+    if (memory.heapUsed > MONITORING.MEMORY_WARNING_THRESHOLD) {
       logger.warn(
         `⚠️ High memory usage: ${memory.heapUsed} MB! Consider restarting or clearing cache.`
       );
     }
     
-    // 🚨 紧急清理：超过 250 MB
-    if (memory.heapUsed > 250) {
+    // 🚨 紧急清理
+    if (memory.heapUsed > MONITORING.MEMORY_CRITICAL_THRESHOLD) {
       logger.error(`🚨 Critical memory usage: ${memory.heapUsed} MB! Auto-clearing cache...`);
       const cleared = clearCaches();
       logger.info(`Cleared cache for ${cleared} guilds`);

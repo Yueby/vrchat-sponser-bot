@@ -1,10 +1,11 @@
 import { Client, GatewayIntentBits, Interaction, Options } from 'discord.js';
 import mongoose from 'mongoose';
+import { MONITORING } from './config/constants';
 import { handleCommand } from './handlers/commandHandler';
 import { handleGuildCreate, handleGuildDelete, syncAllGuilds } from './handlers/guildEvents';
 import { handleMemberAdd, handleMemberRemove } from './handlers/memberEvents';
 import { logger } from './utils/logger';
-import { logMemoryReport, startMemoryMonitor } from './utils/memory';
+import { startMemoryMonitor } from './utils/memory';
 
 // 🚀 内存优化：配置缓存管理器和清理策略
 export const client: Client = new Client({
@@ -52,13 +53,8 @@ client.once('ready', async () => {
   // 自动同步所有服务器
   await syncAllGuilds(client.guilds.cache);
   
-  // 🚀 启动内存监控（每 5 分钟）
-  startMemoryMonitor(5);
-  
-  // 打印初始内存报告
-  setTimeout(() => {
-    logMemoryReport();
-  }, 10000); // 10 秒后打印
+  // 🚀 启动内存监控
+  startMemoryMonitor(MONITORING.MEMORY_CHECK_INTERVAL);
 });
 
 // Bot 加入新服务器
@@ -119,9 +115,27 @@ export const connectDB = async () => {
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
-      family: 4
+      family: 4,
+      maxPoolSize: 10,        // 最大连接数
+      minPoolSize: 2,         // 最小连接数
+      maxIdleTimeMS: 30000,   // 连接空闲后关闭
+      retryWrites: true,      // 自动重试写操作
+      retryReads: true        // 自动重试读操作
     });
     logger.success('Connected to MongoDB Atlas');
+    
+    // MongoDB 连接事件监听
+    mongoose.connection.on('disconnected', () => {
+      logger.error('MongoDB disconnected! Attempting to reconnect...');
+    });
+    
+    mongoose.connection.on('reconnected', () => {
+      logger.success('MongoDB reconnected successfully');
+    });
+    
+    mongoose.connection.on('error', (err) => {
+      logger.error('MongoDB connection error:', err);
+    });
   } catch (error) {
     logger.error('MongoDB Connection Error:', error);
     process.exit(1);

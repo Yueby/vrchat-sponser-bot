@@ -37,7 +37,7 @@ export async function bulkUpsertDiscordUsers(
   }
 
   const result = await DiscordUser.bulkWrite(operations);
-  
+
   return {
     upsertedCount: result.upsertedCount || 0,
     modifiedCount: result.modifiedCount || 0
@@ -50,13 +50,13 @@ export async function bulkUpsertDiscordUsers(
 export async function bulkDeleteGuildData(guildId: string) {
   const Guild = (await import('../models/Guild')).default;
   const VRChatBinding = (await import('../models/VRChatBinding')).default;
-  
+
   const [guildResult, usersResult, bindingsResult] = await Promise.all([
     Guild.deleteOne({ guildId }),
     DiscordUser.deleteMany({ guildId }),
     VRChatBinding.deleteMany({ guildId })
   ]);
-  
+
   return {
     guilds: guildResult.deletedCount || 0,
     users: usersResult.deletedCount || 0,

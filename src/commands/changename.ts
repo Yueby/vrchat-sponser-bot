@@ -84,9 +84,24 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
     const existingBinding = await VRChatBinding.findOne({ discordUserId: userId, guildId });
 
     if (existingBinding) {
+      // 如果名称改变，记录到历史
+      const updates: any = { 
+        vrchatName: cleanName, 
+        bindTime: new Date() 
+      };
+      
+      if (existingBinding.vrchatName !== cleanName) {
+        updates.$push = {
+          nameHistory: {
+            name: existingBinding.vrchatName,
+            changedAt: new Date()
+          }
+        };
+      }
+      
       await VRChatBinding.updateOne(
         { discordUserId: userId, guildId },
-        { vrchatName: cleanName, bindTime: new Date() }
+        updates
       );
     } else {
       await VRChatBinding.create({
@@ -94,7 +109,8 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
         guildId,
         vrchatName: cleanName,
         firstBindTime: new Date(),
-        bindTime: new Date()
+        bindTime: new Date(),
+        nameHistory: []
       });
     }
 

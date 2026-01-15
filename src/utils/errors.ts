@@ -4,26 +4,42 @@ import mongoose from 'mongoose';
 import { logger } from './logger';
 
 /**
+ * 根据错误类型生成友好的错误消息
+ */
+function getErrorMessage(error: unknown): string {
+  if (error instanceof mongoose.Error) {
+    switch (error.name) {
+      case 'MongooseServerSelectionError':
+        return '💥 Database connection failed. Please try again later.';
+      case 'ValidationError':
+        return '⚠️ Data validation failed. Please check your input.';
+      default:
+        return '🔧 Database operation error. Please contact an administrator.';
+    }
+  }
+  
+  if (error instanceof Error) {
+    return `⚠️ ${error.message}`;
+  }
+  
+  return '⚠️ Internal server error. Please try again later or contact an administrator.';
+}
+
+/**
  * 处理命令执行错误并返回用户友好的错误消息
  */
 export async function handleCommandError(interaction: ChatInputCommandInteraction, error: unknown): Promise<void> {
-  logger.error('Command Error:', error);
+  // 增强错误日志，添加更多上下文信息
+  logger.error('Command Error:', {
+    command: interaction.commandName,
+    user: interaction.user.id,
+    username: interaction.user.username,
+    guild: interaction.guildId,
+    channel: interaction.channelId,
+    error: error
+  });
   
-  let errorMessage = '❌ **Operation Failed**\n\n';
-  
-  if (error instanceof mongoose.Error) {
-    if (error.name === 'MongooseServerSelectionError') {
-      errorMessage += '💥 Database connection failed. Please try again later.';
-    } else if (error.name === 'ValidationError') {
-      errorMessage += '⚠️ Data validation failed. Please check your input.';
-    } else {
-      errorMessage += '🔧 Database operation error. Please contact an administrator.';
-    }
-  } else if (error instanceof Error) {
-    errorMessage += `⚠️ ${error.message}`;
-  } else {
-    errorMessage += '⚠️ Internal server error. Please try again later or contact an administrator.';
-  }
+  const errorMessage = '❌ **Operation Failed**\n\n' + getErrorMessage(error);
   
   if (interaction.deferred || interaction.replied) {
     await interaction.editReply(errorMessage);

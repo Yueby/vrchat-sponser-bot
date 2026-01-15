@@ -13,3 +13,4 @@ deploymentTarget = "cloudrun"
 
 [env]
 NODE_ENV = "production"
+LOG_TIMESTAMP = "false"

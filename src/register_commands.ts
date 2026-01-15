@@ -1,15 +1,12 @@
 import { REST, Routes, SlashCommandBuilder } from 'discord.js';
 import dotenv from 'dotenv';
+import { validateEnv } from './utils/env';
 import { logger } from './utils/logger';
 
 dotenv.config();
+validateEnv(); // 使用统一的环境变量验证
 
 const { DISCORD_TOKEN, CLIENT_ID } = process.env;
-
-if (!DISCORD_TOKEN || !CLIENT_ID) {
-  logger.error("❌ Missing environment variables: DISCORD_TOKEN or CLIENT_ID");
-  process.exit(1);
-}
 
 const commands = [
   // /changename - 绑定或更新 VRChat 名字
@@ -74,12 +71,37 @@ const commands = [
               { name: 'Clear Cache', value: 'clear' }
             )
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('search')
+        .setDescription('Search for users by VRChat name, Discord ID, or role')
+        .addStringOption(option =>
+          option.setName('type')
+            .setDescription('Search type')
+            .setRequired(true)
+            .addChoices(
+              { name: 'VRChat Name', value: 'vrchat' },
+              { name: 'Discord ID', value: 'discord' },
+              { name: 'Role', value: 'role' }
+            )
+        )
+        .addStringOption(option =>
+          option.setName('value')
+            .setDescription('Search value (partial match for VRChat/Role, exact for Discord ID)')
+            .setRequired(true)
+        )
     ),
 
   // /whoami - 查看自己的信息
   new SlashCommandBuilder()
     .setName('whoami')
     .setDescription('View your profile and binding status'),
+
+  // /history - 查看绑定历史
+  new SlashCommandBuilder()
+    .setName('history')
+    .setDescription('View your VRChat name change history'),
 
   // /external - 外部用户管理命令（管理员专用）
   new SlashCommandBuilder()
@@ -167,7 +189,7 @@ const commands = [
     )
 ];
 
-const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
+const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN!);
 
 (async () => {
   try {
@@ -178,7 +200,7 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
     });
 
     await rest.put(
-      Routes.applicationCommands(CLIENT_ID),
+      Routes.applicationCommands(CLIENT_ID!),
       { body: commands },
     );
 

@@ -7,9 +7,11 @@ import {
     handleExternalUpdate
 } from '../commands/admin/external';
 import { handleAdminMemory } from '../commands/admin/memory';
+import { handleAdminSearch } from '../commands/admin/search';
 import { handleAdminSync } from '../commands/admin/sync';
 import { handleAdminUnbind } from '../commands/admin/unbind';
 import { handleChangeName } from '../commands/changename';
+import { handleHistory } from '../commands/history';
 import { handleServerApi } from '../commands/server/api';
 import { handleServerStats } from '../commands/server/stats';
 import { handleWhoAmI } from '../commands/whoami';
@@ -44,6 +46,8 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
           await handleAdminUnbind(interaction);
         } else if (adminSubcommand === 'memory') {
           await handleAdminMemory(interaction);
+        } else if (adminSubcommand === 'search') {
+          await handleAdminSearch(interaction);
         }
         break;
 
@@ -62,6 +66,10 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
 
       case 'whoami':
         await handleWhoAmI(interaction);
+        break;
+
+      case 'history':
+        await handleHistory(interaction);
         break;
 
       default:
