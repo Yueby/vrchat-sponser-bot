@@ -12,6 +12,27 @@ export function getCurrentReplitUrl(): string | null {
 }
 
 /**
+ * 获取 Cloudflare Workers.dev 子域名
+ */
+async function getWorkersSubdomain(accountId: string, apiToken: string): Promise<string | null> {
+  try {
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${accountId}/workers/subdomain`, {
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) return null;
+    
+    const data = await response.json() as any;
+    return data.result?.subdomain || null;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
  * 自动更新 Cloudflare Worker 环境变量
  * 使用 Cloudflare API 直接更新 Worker 的环境变量
  */
@@ -19,7 +40,6 @@ export async function updateCloudflareWorker(): Promise<void> {
   const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
   const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
   const CLOUDFLARE_WORKER_NAME = process.env.CLOUDFLARE_WORKER_NAME;
-  const CLOUDFLARE_WORKER_SUBDOMAIN = process.env.CLOUDFLARE_WORKER_SUBDOMAIN; // 如 yueby-sp
   
   // 获取当前 Replit URL
   const replitUrl = process.env.REPLIT_DEV_DOMAIN 
@@ -90,13 +110,13 @@ export async function updateCloudflareWorker(): Promise<void> {
     
     logger.success('✅ Cloudflare Worker updated successfully!');
     
-    // 显示 Worker URL
-    if (CLOUDFLARE_WORKER_SUBDOMAIN) {
-      const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${CLOUDFLARE_WORKER_SUBDOMAIN}.workers.dev`;
+    // 自动获取并显示 Worker URL
+    const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
+    if (subdomain) {
+      const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
       logger.info(`   Worker URL: ${workerUrl}`);
     } else {
       logger.info(`   ℹ️ Check your Worker URL in Cloudflare Dashboard`);
-      logger.info(`   💡 Tip: Set CLOUDFLARE_WORKER_SUBDOMAIN env var to display URL here`);
     }
     
   } catch (error) {

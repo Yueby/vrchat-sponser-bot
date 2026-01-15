@@ -55,22 +55,6 @@ async function main(): Promise<void> {
       
       // Auto-update Cloudflare Worker if configured
       await updateCloudflareWorker();
-      
-      // Show Cloudflare access info
-      if (process.env.CLOUDFLARE_WORKER_NAME) {
-        logger.success(`✨ Access your bot via Cloudflare (permanent URL):`);
-        
-        if (process.env.CLOUDFLARE_WORKER_SUBDOMAIN) {
-          const workerUrl = `https://${process.env.CLOUDFLARE_WORKER_NAME}.${process.env.CLOUDFLARE_WORKER_SUBDOMAIN}.workers.dev`;
-          logger.info(`   🌐 Worker URL: ${workerUrl}`);
-          logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-          logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
-        } else {
-          logger.info(`   🌐 Worker Name: ${process.env.CLOUDFLARE_WORKER_NAME}`);
-          logger.info(`   💡 Check full URL in Cloudflare Dashboard`);
-          logger.info(`   💡 Or set CLOUDFLARE_WORKER_SUBDOMAIN to display URL`);
-        }
-      }
     } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
       // Deploy mode (permanent URL)
       const deployUrl = `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app`;
