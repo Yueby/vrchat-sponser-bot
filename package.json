@@ -5,7 +5,6 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "postinstall": "npm run build && npm run register",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "register": "ts-node src/register_commands.ts"
