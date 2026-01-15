@@ -36,31 +36,32 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
         .setColor(memory.heapUsed > 200 ? EMBED_COLORS.WARNING : EMBED_COLORS.SUCCESS)
         .addFields(
           {
-            name: '💾 Memory Usage',
+            name: 'Memory Usage',
             value:
-              `**Heap Used:** ${memory.heapUsed} MB\n` +
-              `**Heap Total:** ${memory.heapTotal} MB\n` +
-              `**RSS:** ${memory.rss} MB\n` +
-              `**External:** ${memory.external} MB`,
+              `Heap Used: ${memory.heapUsed} MB\n` +
+              `Heap Total: ${memory.heapTotal} MB\n` +
+              `RSS: ${memory.rss} MB\n` +
+              `External: ${memory.external} MB`,
             inline: true
           },
           {
-            name: '📦 Cache Statistics',
+            name: 'Cache Statistics',
             value:
-              `**Guilds:** ${cache.guilds}\n` +
-              `**Members:** ${cache.members}\n` +
-              `**Users:** ${cache.users}\n` +
-              `**Roles:** ${cache.roles}`,
+              `Guilds: ${cache.guilds}\n` +
+              `Members: ${cache.members}\n` +
+              `Users: ${cache.users}\n` +
+              `Roles: ${cache.roles}`,
             inline: true
           },
+          { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
           {
-            name: '⚠️ Status',
+            name: 'Status',
             value:
               memory.heapUsed < 150
-                ? '🟢 **Healthy** - Memory usage is normal'
+                ? '🟢 Healthy - Memory usage is normal'
                 : memory.heapUsed < 200
-                ? '🟡 **Moderate** - Memory usage is elevated'
-                : '🔴 **High** - Consider clearing cache or restarting',
+                ? '🟡 Moderate - Memory usage is elevated'
+                : '🔴 High - Consider clearing cache or restarting',
             inline: false
           }
         )
@@ -102,28 +103,29 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
         .setColor(EMBED_COLORS.SUCCESS)
         .addFields(
           {
-            name: '📊 Before',
+            name: 'Before',
             value:
-              `**Memory:** ${beforeMemory.heapUsed} MB\n` +
-              `**Members:** ${beforeCache.members}\n` +
-              `**Users:** ${beforeCache.users}`,
+              `Memory: ${beforeMemory.heapUsed} MB\n` +
+              `Members: ${beforeCache.members}\n` +
+              `Users: ${beforeCache.users}`,
             inline: true
           },
           {
-            name: '📊 After',
+            name: 'After',
             value:
-              `**Memory:** ${afterMemory.heapUsed} MB\n` +
-              `**Members:** ${afterCache.members}\n` +
-              `**Users:** ${afterCache.users}`,
+              `Memory: ${afterMemory.heapUsed} MB\n` +
+              `Members: ${afterCache.members}\n` +
+              `Users: ${afterCache.users}`,
             inline: true
           },
+          { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
           {
-            name: '♻️ Cleared',
+            name: 'Cleared',
             value:
-              `**Memory:** ${memoryFreed > 0 ? `${memoryFreed} MB freed` : 'N/A'}\n` +
-              `**Members:** ${membersCleared}\n` +
-              `**Users:** ${usersCleared}\n` +
-              `**Guilds:** ${clearedGuilds}`,
+              `Memory: ${memoryFreed > 0 ? `${memoryFreed} MB freed` : 'N/A'}\n` +
+              `Members: ${membersCleared}\n` +
+              `Users: ${usersCleared}\n` +
+              `Guilds: ${clearedGuilds}`,
             inline: false
           }
         )

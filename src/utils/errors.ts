@@ -10,19 +10,19 @@ function getErrorMessage(error: unknown): string {
   if (error instanceof mongoose.Error) {
     switch (error.name) {
       case 'MongooseServerSelectionError':
-        return '💥 Database connection failed. Please try again later.';
+        return '🔴 Database connection failed. Please try again later.';
       case 'ValidationError':
-        return '⚠️ Data validation failed. Please check your input.';
+        return '🟡 Data validation failed. Please check your input.';
       default:
-        return '🔧 Database operation error. Please contact an administrator.';
+        return '🔴 Database operation error. Please contact an administrator.';
     }
   }
   
   if (error instanceof Error) {
-    return `⚠️ ${error.message}`;
+    return `🟡 ${error.message}`;
   }
   
-  return '⚠️ Internal server error. Please try again later or contact an administrator.';
+  return '🟡 Internal server error. Please try again later or contact an administrator.';
 }
 
 /**
@@ -39,7 +39,7 @@ export async function handleCommandError(interaction: ChatInputCommandInteractio
     error: error
   });
   
-  const errorMessage = '❌ **Operation Failed**\n\n' + getErrorMessage(error);
+  const errorMessage = '🔴 Operation Failed\n\n' + getErrorMessage(error);
   
   if (interaction.deferred || interaction.replied) {
     await interaction.editReply(errorMessage);
@@ -54,7 +54,7 @@ export async function handleCommandError(interaction: ChatInputCommandInteractio
 export function requireGuild(interaction: ChatInputCommandInteraction): string | null {
   if (!interaction.guildId) {
     interaction.reply({
-      content: '❌ This command can only be used in a server!',
+      content: '🔴 This command can only be used in a server!',
       flags: MessageFlags.Ephemeral
     });
     return null;
@@ -69,7 +69,7 @@ export function requireAdmin(interaction: ChatInputCommandInteraction): boolean 
   const member = interaction.guild!.members.cache.get(interaction.user.id);
   if (!member?.permissions.has('Administrator')) {
     interaction.reply({
-      content: '❌ Only administrators can use this command!',
+      content: '🔴 Only administrators can use this command!',
       flags: MessageFlags.Ephemeral
     });
     return false;
@@ -83,7 +83,7 @@ export function requireAdmin(interaction: ChatInputCommandInteraction): boolean 
 export function requireOwner(interaction: ChatInputCommandInteraction): boolean {
   if (interaction.guild!.ownerId !== interaction.user.id) {
     interaction.reply({
-      content: '❌ Only the server owner can use this command!',
+      content: '🔴 Only the server owner can use this command!',
       flags: MessageFlags.Ephemeral
     });
     return false;

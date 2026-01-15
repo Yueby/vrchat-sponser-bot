@@ -66,20 +66,20 @@ export function startMemoryMonitor(intervalMinutes: number = MONITORING.MEMORY_C
     const cache = getCacheStats();
     
     logger.info(
-      `📊 Memory: ${memory.heapUsed}/${memory.heapTotal} MB | ` +
+      `Memory: ${memory.heapUsed}/${memory.heapTotal} MB | ` +
       `Cache: ${cache.guilds} guilds, ${cache.members} members, ${cache.users} users`
     );
     
     // 🚨 内存警告
     if (memory.heapUsed > MONITORING.MEMORY_WARNING_THRESHOLD) {
       logger.warn(
-        `⚠️ High memory usage: ${memory.heapUsed} MB! Consider restarting or clearing cache.`
+        `High memory usage: ${memory.heapUsed} MB! Consider restarting or clearing cache.`
       );
     }
     
-    // 🚨 紧急清理
+    // 紧急清理
     if (memory.heapUsed > MONITORING.MEMORY_CRITICAL_THRESHOLD) {
-      logger.error(`🚨 Critical memory usage: ${memory.heapUsed} MB! Auto-clearing cache...`);
+      logger.error(`Critical memory usage: ${memory.heapUsed} MB! Auto-clearing cache...`);
       const cleared = clearCaches();
       logger.info(`Cleared cache for ${cleared} guilds`);
       
@@ -102,7 +102,7 @@ export function logMemoryReport() {
   const cache = getCacheStats();
   
   logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  logger.info('📊 MEMORY REPORT');
+  logger.info('MEMORY REPORT');
   logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   logger.info(`Heap Used:  ${memory.heapUsed} MB`);
   logger.info(`Heap Total: ${memory.heapTotal} MB`);

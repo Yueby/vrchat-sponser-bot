@@ -33,7 +33,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
   const validation = validateVRChatName(newName);
   if (!validation.valid) {
     await interaction.reply({
-      content: `❌ ${validation.error}`,
+      content: `🔴 ${validation.error}`,
       flags: MessageFlags.Ephemeral
     });
     return;
@@ -45,7 +45,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
     if (Date.now() < expirationTime) {
       const timeLeft = Math.round((expirationTime - Date.now()) / 1000);
       await interaction.reply({
-        content: `⏱️ Please wait **${timeLeft}** seconds before using this command again`,
+        content: `Please wait ${timeLeft} seconds before using this command again`,
         flags: MessageFlags.Ephemeral
       });
       return;
@@ -61,7 +61,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
     // 获取成员信息
     const member = interaction.guild!.members.cache.get(userId);
     if (!member) {
-      await interaction.editReply('❌ Could not find member information');
+      await interaction.editReply('🔴 Could not find member information');
       return;
     }
 
@@ -125,25 +125,26 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
       .setTitle(isNewBinding ? 'VRChat Binding Created' : 'VRChat Name Updated')
       .setDescription(
         isNewBinding
-          ? `Your VRChat name has been **successfully bound** to your Discord account!`
-          : `Your VRChat name has been **updated** successfully.`
+          ? `Your VRChat name has been successfully bound to your Discord account!`
+          : `Your VRChat name has been updated successfully.`
       )
       .setColor(member.displayColor || EMBED_COLORS.SUCCESS)
       .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
       .addFields(
         {
-          name: '🎮 VRChat Information',
-          value: `**Name:** ${cleanName}${isNewBinding ? '\n\n*First time binding - Welcome!* 👋' : ''}`,
+          name: 'VRChat Information',
+          value: `Name: ${cleanName}${isNewBinding ? '\n━━━━━━━━━━━━━━━━━\nFirst time binding - Welcome!' : ''}`,
           inline: false
         },
+        { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
         {
-          name: '🎭 Current Roles',
+          name: 'Current Roles',
           value: roleNames.length > 0 ? roleNames.map(r => `• ${r}`).join('\n') : 'No roles',
           inline: true
         },
         {
-          name: '⭐ Membership Status',
-          value: isMemberBooster(member) ? '💎 **Server Booster**' : '**Member**',
+          name: 'Membership Status',
+          value: isMemberBooster(member) ? 'Server Booster' : 'Member',
           inline: true
         }
       )

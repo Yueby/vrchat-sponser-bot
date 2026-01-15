@@ -14,7 +14,9 @@ async function main(): Promise<void> {
     // Validate environment variables first
     validateEnv();
     
-    logger.info('Starting VRChat Sponsor Bot...');
+    logger.info('═══════════════════════════════════════════════════════');
+    logger.info('           VRChat Sponsor Bot - Starting              ');
+    logger.info('═══════════════════════════════════════════════════════');
     
     // 1. Start Web Server
     startServer();
@@ -38,8 +40,10 @@ async function main(): Promise<void> {
     // 4. Perform Health Check
     await performStartupHealthCheck();
     
+    logger.info('═══════════════════════════════════════════════════════');
     logger.success('Bot is ready!');
-    logger.success('Server started successfully!'); // 平台可能检查这个
+    logger.success('Server started successfully!');
+    logger.info('═══════════════════════════════════════════════════════');
     
     // Auto-update Cloudflare Worker if configured
     await updateCloudflareWorker();

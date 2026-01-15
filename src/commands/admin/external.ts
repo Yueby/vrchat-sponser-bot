@@ -34,13 +34,13 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
     const cleanVrchatName = sanitizeVRChatName(vrchatName);
     const nameValidation = validateVRChatName(cleanVrchatName);
     if (!nameValidation.valid) {
-      await interaction.editReply(`❌ ${nameValidation.error}`);
+      await interaction.editReply(`🔴 ${nameValidation.error}`);
       return;
     }
 
     // 验证 Discord User ID（如果提供）
     if (discordUserId && !validateDiscordUserId(discordUserId)) {
-      await interaction.editReply('❌ Invalid Discord User ID format. Must be 17-19 digits.');
+      await interaction.editReply('🔴 Invalid Discord User ID format. Must be 17-19 digits.');
       return;
     }
 
@@ -48,14 +48,14 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
     const roleNames = parseRoles(rolesString);
     const roleValidation = validateRoles(interaction.guild!, roleNames);
     if (!roleValidation.valid) {
-      await interaction.editReply(`❌ ${roleValidation.error}`);
+      await interaction.editReply(`🔴 ${roleValidation.error}`);
       return;
     }
 
     // 检查是否已存在
     const existing = await findExternalUser(guildId, cleanVrchatName);
     if (existing) {
-      await interaction.editReply(`❌ External user with VRChat name **${cleanVrchatName}** already exists.`);
+      await interaction.editReply(`🔴 External user with VRChat name **${cleanVrchatName}** already exists.`);
       return;
     }
 
@@ -63,7 +63,7 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
     if (discordUserId) {
       const existingByDiscord = await ExternalUser.findOne({ guildId, discordUserId });
       if (existingByDiscord) {
-        await interaction.editReply(`❌ External user with Discord ID **${discordUserId}** already exists.`);
+        await interaction.editReply(`🔴 External user with Discord ID **${discordUserId}** already exists.`);
         return;
       }
     }
@@ -92,7 +92,7 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
       .addFields(
         {
           name: 'VRChat Information',
-          value: `**Name:** ${cleanVrchatName}${displayName ? `\n**Display:** ${displayName}` : ''}`,
+          value: `Name: ${cleanVrchatName}${displayName ? `\nDisplay: ${displayName}` : ''}`,
           inline: true
         },
         {
@@ -151,7 +151,7 @@ export async function handleExternalUpdate(interaction: ChatInputCommandInteract
     // 查找用户
     const user = await findExternalUser(guildId, identifier);
     if (!user) {
-      await interaction.editReply(`❌ External user **${identifier}** not found.`);
+      await interaction.editReply(`🔴 External user **${identifier}** not found.`);
       return;
     }
 
@@ -168,7 +168,7 @@ export async function handleExternalUpdate(interaction: ChatInputCommandInteract
       const cleanName = sanitizeVRChatName(newVrchatName);
       const validation = validateVRChatName(cleanName);
       if (!validation.valid) {
-        await interaction.editReply(`❌ ${validation.error}`);
+        await interaction.editReply(`🔴 ${validation.error}`);
         return;
       }
       updates.vrchatName = cleanName;
@@ -179,7 +179,7 @@ export async function handleExternalUpdate(interaction: ChatInputCommandInteract
       const roleNames = parseRoles(newRolesString);
       const roleValidation = validateRoles(interaction.guild!, roleNames);
       if (!roleValidation.valid) {
-        await interaction.editReply(`❌ ${roleValidation.error}`);
+        await interaction.editReply(`🔴 ${roleValidation.error}`);
         return;
       }
       updates.virtualRoles = roleNames;
@@ -214,7 +214,7 @@ export async function handleExternalUpdate(interaction: ChatInputCommandInteract
       .addFields(
         {
           name: 'VRChat Information',
-          value: `**Name:** ${updatedUser!.vrchatName}${updatedUser!.displayName ? `\n**Display:** ${updatedUser!.displayName}` : ''}`,
+          value: `Name: ${updatedUser!.vrchatName}${updatedUser!.displayName ? `\nDisplay: ${updatedUser!.displayName}` : ''}`,
           inline: true
         },
         {
@@ -253,7 +253,7 @@ export async function handleExternalRemove(interaction: ChatInputCommandInteract
     // 查找用户
     const user = await findExternalUser(guildId, identifier);
     if (!user) {
-      await interaction.editReply(`❌ External user **${identifier}** not found.`);
+      await interaction.editReply(`🔴 External user **${identifier}** not found.`);
       return;
     }
 
@@ -366,9 +366,9 @@ export async function handleExternalList(interaction: ChatInputCommandInteractio
     // 添加用户字段
     pageUsers.forEach((user, idx) => {
       const userInfo = 
-        `**VRChat:** ${user.vrchatName}\n` +
-        `**Roles:** ${user.virtualRoles.join(', ')}\n` +
-        `**Added:** <t:${Math.floor(user.addedAt.getTime() / 1000)}:R>`;
+        `VRChat: ${user.vrchatName}\n` +
+        `Roles: ${user.virtualRoles.join(', ')}\n` +
+        `Added: <t:${Math.floor(user.addedAt.getTime() / 1000)}:R>`;
 
       embed.addFields({
         name: `${startIdx + idx + 1}. ${user.displayName || user.vrchatName}`,

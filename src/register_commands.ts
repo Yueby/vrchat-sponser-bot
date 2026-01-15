@@ -193,8 +193,8 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN!);
 
 (async () => {
   try {
-    logger.info('🔄 Refreshing application (/) commands...');
-    logger.info(`📝 Registering ${commands.length} commands:`);
+    logger.info('Refreshing application (/) commands...');
+    logger.info(`Registering ${commands.length} commands:`);
     commands.forEach(cmd => {
       logger.info(`   - /${cmd.name}`);
     });
@@ -206,7 +206,7 @@ const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN!);
 
     logger.success('Successfully reloaded application (/) commands.');
   } catch (error) {
-    logger.error('❌ Failed to register commands:', error);
+    logger.error('Failed to register commands:', error);
     process.exit(1);
   }
 })();

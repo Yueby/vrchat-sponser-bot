@@ -46,22 +46,23 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
       .setThumbnail(interaction.guild!.iconURL({ size: AVATAR_SIZES.MEDIUM }) || null)
       .addFields(
         {
-          name: '📊 Sync Statistics',
+          name: 'Sync Statistics',
           value:
-            `**Total Synced:** ${syncCount} members\n` +
-            `**New Records:** ${upsertedCount}\n` +
-            `**Updated Records:** ${modifiedCount}`,
+            `Total Synced: ${syncCount} members\n` +
+            `New Records: ${upsertedCount}\n` +
+            `Updated Records: ${modifiedCount}`,
           inline: true
         },
         {
-          name: '⚡ Performance',
+          name: 'Performance',
           value:
-            `**Duration:** ${elapsedTime}s\n` +
-            `**Completed:** <t:${timestamp}:R>`,
+            `Duration: ${elapsedTime}s\n` +
+            `Completed: <t:${timestamp}:R>`,
           inline: true
         },
+        { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
         {
-          name: '💡 What Was Synced',
+          name: 'What Was Synced',
           value:
             '• Discord user IDs\n' +
             '• Role assignments\n' +

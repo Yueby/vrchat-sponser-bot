@@ -39,19 +39,20 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
         .addFields(
           {
             name: 'Target User',
-            value: `**Discord:** ${targetUser.username}\n**ID:** \`${targetUser.id}\``,
+            value: `Discord: ${targetUser.username}\nID: \`${targetUser.id}\``,
             inline: true
           },
           {
             name: 'VRChat Info',
-            value: `**Name:** ${result.vrchatName}\n**Bound Days:** ${bindDays} days`,
+            value: `Name: ${result.vrchatName}\nBound Days: ${bindDays} days`,
             inline: true
           },
+          { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
           {
             name: 'Binding History',
             value:
-              `**First Bound:** <t:${Math.floor(result.firstBindTime.getTime() / 1000)}:D>\n` +
-              `**Last Update:** <t:${Math.floor(result.bindTime.getTime() / 1000)}:R>`,
+              `First Bound: <t:${Math.floor(result.firstBindTime.getTime() / 1000)}:D>\n` +
+              `Last Update: <t:${Math.floor(result.bindTime.getTime() / 1000)}:R>`,
             inline: false
           }
         )
@@ -76,7 +77,7 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
         .setColor(EMBED_COLORS.INFO)
         .setThumbnail(targetUser.displayAvatarURL({ size: AVATAR_SIZES.MEDIUM }))
         .addFields({
-          name: '💡 Tip',
+          name: 'Tip',
           value: 'Users must use `/changename` to create a VRChat binding first.',
           inline: false
         })

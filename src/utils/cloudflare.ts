@@ -108,7 +108,7 @@ export async function updateCloudflareWorker(): Promise<void> {
   const backendUrl = detectBackendUrl();
   
   if (!backendUrl) {
-    logger.warn('⚠️ Cannot detect backend URL from any platform');
+    logger.warn('Cannot detect backend URL from any platform');
     logger.info('   Supported platforms: Koyeb, Railway, Render, Zeabur, Fly.io');
     logger.info('   Or manually set BACKEND_URL environment variable');
     logger.info('   Example: BACKEND_URL=https://your-app.koyeb.app');
@@ -126,20 +126,25 @@ export async function updateCloudflareWorker(): Promise<void> {
   
   // 检查是否配置了 Cloudflare
   if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_WORKER_NAME) {
-    logger.info('ℹ️ Cloudflare Worker integration not configured');
-    logger.info(`   📍 Platform: ${platform}`);
-    logger.info(`   🌐 Backend URL: ${backendUrl}`);
+    logger.info('');
+    logger.info('───────────── Cloudflare Worker ───────────');
+    logger.info('Cloudflare Worker integration not configured');
+    logger.info(`   Platform: ${platform}`);
+    logger.info(`   Backend URL: ${backendUrl}`);
     logger.info(`   To enable automatic Worker updates, configure:`);
     logger.info(`   - CLOUDFLARE_API_TOKEN`);
     logger.info(`   - CLOUDFLARE_ACCOUNT_ID`);
     logger.info(`   - CLOUDFLARE_WORKER_NAME`);
+    logger.info('───────────────────────────────────────────');
     return;
   }
   
   try {
-    logger.info(`🔄 Updating Cloudflare Worker...`);
-    logger.info(`   📍 Platform: ${platform}`);
-    logger.info(`   🌐 Backend URL: ${backendUrl}`);
+    logger.info('');
+    logger.info('───────────── Cloudflare Worker ───────────');
+    logger.info(`Updating Cloudflare Worker...`);
+    logger.info(`   Platform: ${platform}`);
+    logger.info(`   Backend URL: ${backendUrl}`);
     
     // 使用 Secrets API 更新 Worker secret
     const secretUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/secrets`;
@@ -172,17 +177,18 @@ export async function updateCloudflareWorker(): Promise<void> {
     const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
     if (subdomain) {
       const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
-      logger.success('✅ Cloudflare Worker updated successfully!');
-      logger.info(`   🌐 Worker URL: ${workerUrl}`);
-      logger.info(`   📡 API: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-      logger.info(`   🏥 Health: ${workerUrl}/health`);
+      logger.success('Cloudflare Worker updated successfully!');
+      logger.info(`   Worker URL: ${workerUrl}`);
+      logger.info(`   API: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      logger.info(`   Health: ${workerUrl}/health`);
     } else {
-      logger.success('✅ Cloudflare Worker updated successfully!');
+      logger.success('Cloudflare Worker updated successfully!');
     }
+    logger.info('───────────────────────────────────────────');
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error(`❌ Failed to update Cloudflare Worker: ${errorMessage}`);
-    logger.warn('⚠️ Bot will continue running. You can manually set BACKEND_URL in Cloudflare Dashboard');
+    logger.error(`Failed to update Cloudflare Worker: ${errorMessage}`);
+    logger.warn('Bot will continue running. You can manually set BACKEND_URL in Cloudflare Dashboard');
   }
 }

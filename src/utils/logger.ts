@@ -81,42 +81,42 @@ class Logger {
   }
 
   /**
-   * 带表情符号的特殊日志方法（保持兼容性）
+   * 特殊日志方法（保持兼容性）
    */
   success(message: string): void {
-    this.info(`✅ ${message}`);
+    this.info(`🟢 ${message}`);
   }
 
   bot(message: string): void {
-    this.info(`🤖 ${message}`);
+    this.info(message);
   }
 
   network(message: string): void {
-    this.info(`📡 ${message}`);
+    this.info(message);
   }
 
   sync(message: string): void {
-    this.info(`🔄 ${message}`);
+    this.info(message);
   }
 
   newGuild(message: string): void {
-    this.info(`🆕 ${message}`);
+    this.info(message);
   }
 
   memberJoin(message: string): void {
-    this.info(`👋 ${message}`);
+    this.info(message);
   }
 
   memberLeave(message: string): void {
-    this.warn(`👋 ${message}`);
+    this.warn(message);
   }
 
   delete(message: string): void {
-    this.warn(`🗑️ ${message}`);
+    this.warn(message);
   }
 
   celebrate(message: string): void {
-    this.info(`🎉 ${message}`);
+    this.info(message);
   }
 }
 

@@ -74,7 +74,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
 
       default:
         await interaction.reply({
-          content: '❌ Unknown command',
+          content: '🔴 Unknown command',
           flags: MessageFlags.Ephemeral
         });
     }

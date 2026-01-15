@@ -42,7 +42,7 @@ export async function handleServerApi(interaction: ChatInputCommandInteraction):
         },
         {
           name: 'Status',
-          value: enabled ? '**Active**' : '**Inactive**',
+          value: enabled ? 'Active' : 'Inactive',
           inline: true
         },
         {

@@ -58,7 +58,7 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('VRChat Sponsor Bot is running! 🤖');
+  res.send('VRChat Sponsor Bot is running!');
 });
 
 // VRChat API Endpoint - Returns role-grouped DataDictionary structure
@@ -242,7 +242,10 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
 export const startServer = () => {
   const port = Number(PORT);
   const server = app.listen(port, '0.0.0.0', () => {
+    logger.info('');
+    logger.info('─────────────── Web Server ────────────────');
     logger.success(`Web server listening on port ${port}`);
+    logger.info('───────────────────────────────────────────');
   });
   
   server.on('error', (error: NodeJS.ErrnoException) => {

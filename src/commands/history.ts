@@ -23,8 +23,8 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
           name: username,
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
         })
-        .setTitle('📜 Binding History')
-        .setDescription('❌ **No binding found**\n\nYou haven\'t bound a VRChat name yet.\nUse `/changename` to create your first binding!')
+        .setTitle('Binding History')
+        .setDescription('🔴 No binding found\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nYou haven\'t bound a VRChat name yet.\nUse `/changename` to create your first binding!')
         .setColor(EMBED_COLORS.ERROR)
         .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
         .setFooter({
@@ -46,14 +46,16 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
         name: username,
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
       })
-      .setTitle('📜 VRChat Binding History')
+      .setTitle('VRChat Binding History')
       .setDescription(
-        `🎮 **Current Name:** ${vrchatBinding.vrchatName}\n` +
-        `🔄 **Total Changes:** ${totalChanges}\n` +
-        `📅 **Bound Since:** <t:${Math.floor(vrchatBinding.firstBindTime.getTime() / 1000)}:D> (${bindDays} days)`
+        `Current Name: ${vrchatBinding.vrchatName}\n` +
+        `Total Changes: ${totalChanges}\n` +
+        `Bound Since: <t:${Math.floor(vrchatBinding.firstBindTime.getTime() / 1000)}:D> (${bindDays} days)`
       )
       .setColor(EMBED_COLORS.INFO)
       .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }));
+
+    embed.addFields({ name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false });
 
     // 添加历史记录
     if (vrchatBinding.nameHistory && vrchatBinding.nameHistory.length > 0) {
@@ -68,40 +70,42 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
       let historyText = '';
       displayHistory.forEach((entry, index) => {
         const timestamp = Math.floor(entry.changedAt.getTime() / 1000);
-        historyText += `**${index + 1}.** ${entry.name}\n`;
+        historyText += `${index + 1}. ${entry.name}\n`;
         historyText += `   <t:${timestamp}:R> • <t:${timestamp}:D>\n\n`;
       });
 
       embed.addFields({
-        name: '📝 Previous Names',
+        name: 'Previous Names',
         value: historyText || 'No history available',
         inline: false
       });
 
       if (sortedHistory.length > 10) {
         embed.addFields({
-          name: 'ℹ️ Note',
+          name: '',
           value: `Showing 10 most recent of ${sortedHistory.length} total changes.`,
           inline: false
         });
       }
     } else {
       embed.addFields({
-        name: '📝 Previous Names',
-        value: '*No name changes yet*\n\nYour history will appear here when you update your VRChat name.',
+        name: 'Previous Names',
+        value: 'No name changes yet\n\nYour history will appear here when you update your VRChat name.',
         inline: false
       });
     }
+
+    embed.addFields({ name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false });
 
     // 添加统计信息
     const daysSinceLastChange = Math.floor((Date.now() - vrchatBinding.bindTime.getTime()) / (1000 * 60 * 60 * 24));
     const avgDaysPerChange = totalChanges > 1 ? Math.floor(bindDays / (totalChanges - 1)) : bindDays;
 
     embed.addFields({
-      name: '📊 Statistics',
+      name: 'Statistics',
       value: 
-        `**Last Update:** <t:${Math.floor(vrchatBinding.bindTime.getTime() / 1000)}:R> (${daysSinceLastChange} days ago)\n` +
-        `**Avg Time Between Changes:** ${avgDaysPerChange} days`,
+        `Last Update: <t:${Math.floor(vrchatBinding.bindTime.getTime() / 1000)}:R> (${daysSinceLastChange} days ago)\n` +
+        `Avg Time Between Changes: ${avgDaysPerChange} days`,
       inline: false
     });
 

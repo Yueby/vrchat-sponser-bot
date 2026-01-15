@@ -111,7 +111,7 @@ export async function handleAdminSearch(interaction: ChatInputCommandInteraction
         // 按角色搜索
         const discordGuild = client.guilds.cache.get(guildId);
         if (!discordGuild) {
-          await interaction.editReply('❌ Guild not found in cache');
+          await interaction.editReply('🔴 Guild not found in cache');
           return;
         }
 
@@ -121,7 +121,7 @@ export async function handleAdminSearch(interaction: ChatInputCommandInteraction
         );
 
         if (!role) {
-          await interaction.editReply(`❌ Role **${searchValue}** not found in this server.`);
+          await interaction.editReply(`🔴 Role **${searchValue}** not found in this server.`);
           return;
         }
 
@@ -200,7 +200,7 @@ export async function handleAdminSearch(interaction: ChatInputCommandInteraction
       .setTitle(`Search Results: ${searchType}`)
       .setDescription(
         `Found **${results.length}** result${results.length !== 1 ? 's' : ''} for **${searchValue}**\n\n` +
-        `**Search Type:** ${searchType === 'vrchat' ? 'VRChat Name' : searchType === 'discord' ? 'Discord ID' : 'Role'}`
+        `Search Type: ${searchType === 'vrchat' ? 'VRChat Name' : searchType === 'discord' ? 'Discord ID' : 'Role'}`
       )
       .setColor(EMBED_COLORS.SUCCESS)
       .setFooter({
@@ -216,21 +216,21 @@ export async function handleAdminSearch(interaction: ChatInputCommandInteraction
       
       let fieldValue = '';
       if (result.vrchatName) {
-        fieldValue += `**VRChat:** ${result.vrchatName}\n`;
+        fieldValue += `VRChat: ${result.vrchatName}\n`;
       }
       if (result.discordUserId) {
-        fieldValue += `**Discord:** <@${result.discordUserId}> (${result.discordUsername})\n`;
+        fieldValue += `Discord: <@${result.discordUserId}> (${result.discordUsername})\n`;
       }
       if (result.type === 'member' && result.bindTime) {
-        fieldValue += `**Bound:** <t:${Math.floor(result.bindTime.getTime() / 1000)}:R>\n`;
+        fieldValue += `Bound: <t:${Math.floor(result.bindTime.getTime() / 1000)}:R>\n`;
       }
       if (result.type === 'external') {
-        fieldValue += `**Type:** External User\n`;
+        fieldValue += `Type: External User\n`;
         if (result.roles && result.roles.length > 0) {
-          fieldValue += `**Roles:** ${result.roles.slice(0, 3).join(', ')}${result.roles.length > 3 ? '...' : ''}\n`;
+          fieldValue += `Roles: ${result.roles.slice(0, 3).join(', ')}${result.roles.length > 3 ? '...' : ''}\n`;
         }
         if (result.addedAt) {
-          fieldValue += `**Added:** <t:${Math.floor(result.addedAt.getTime() / 1000)}:R>`;
+          fieldValue += `Added: <t:${Math.floor(result.addedAt.getTime() / 1000)}:R>`;
         }
       }
 
