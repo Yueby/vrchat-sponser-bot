@@ -45,57 +45,46 @@ export async function updateCloudflareWorker(): Promise<void> {
     logger.info('🌐 Updating Cloudflare Worker environment variable...');
     logger.info(`   Current Replit URL: ${replitUrl}`);
     
-    // 使用 Cloudflare Workers 环境变量 API
-    // API 文档: https://developers.cloudflare.com/api/operations/worker-environment-variables-create-environment-variable
-    const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/environments/production/variables`;
+    // 使用 Cloudflare Workers Secret API（类似 wrangler secret put）
+    // 这是最直接的方式来设置环境变量
+    const secretUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/secrets`;
     
-    // 先获取现有的环境变量
-    const getResponse = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    let existingVars: any[] = [];
-    if (getResponse.ok) {
-      const data = await getResponse.json() as any;
-      existingVars = data.result || [];
-    }
-    
-    // 过滤掉旧的 REPLIT_URL，保留其他变量
-    const otherVars = existingVars.filter((v: any) => v.name !== 'REPLIT_URL');
-    
-    // 添加新的 REPLIT_URL
-    const updatedVars = [
-      ...otherVars,
-      {
-        name: 'REPLIT_URL',
-        text: replitUrl,
-        type: 'secret_text'
-      }
-    ];
-    
-    // 更新所有环境变量
-    const putResponse = await fetch(apiUrl, {
+    // PUT 请求来创建/更新 secret
+    const updateResponse = await fetch(secretUrl, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(updatedVars)
+      body: JSON.stringify({
+        name: 'REPLIT_URL',
+        text: replitUrl,
+        type: 'secret_text'
+      })
     });
     
-    if (!putResponse.ok) {
-      const errorText = await putResponse.text();
-      throw new Error(`API error (${putResponse.status}): ${errorText}`);
+    // 获取响应文本
+    const responseText = await updateResponse.text();
+    
+    // 检查 HTTP 状态
+    if (!updateResponse.ok) {
+      logger.debug(`API Response (${updateResponse.status}): ${responseText}`);
+      throw new Error(`HTTP ${updateResponse.status}: ${responseText || 'Unknown error'}`);
     }
     
-    const result = await putResponse.json() as any;
+    // 解析 JSON
+    let result: any;
+    try {
+      result = responseText ? JSON.parse(responseText) : { success: true };
+    } catch (parseError) {
+      logger.debug(`Failed to parse response: ${responseText}`);
+      throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+    }
     
-    if (!result.success) {
-      throw new Error(`Cloudflare API error: ${JSON.stringify(result.errors)}`);
+    // 检查 API 成功状态
+    if (result.success === false) {
+      const errors = result.errors || [];
+      throw new Error(`API returned error: ${JSON.stringify(errors)}`);
     }
     
     logger.success('✅ Cloudflare Worker updated successfully!');
