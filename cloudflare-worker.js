@@ -1,18 +1,63 @@
 /**
- * Cloudflare Worker - VRChat Bot 反向代理
+ * Cloudflare Worker - VRChat Bot 智能反向代理
  * 
- * 自动将请求转发到 Replit 后端
- * REPLIT_URL 环境变量会在每次 bot 启动时自动更新
+ * 方案说明：
+ * 1. Worker 首先尝试使用手动配置的 REPLIT_URL 环境变量
+ * 2. 如果请求 /__replit_url，则从后端获取最新 URL 并缓存
+ * 3. 其他请求自动转发到最新的 Replit URL
  */
 
+// URL 缓存（在 Worker 实例中保持）
+let cachedReplitUrl = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 60000; // 1 分钟缓存
+
 export default {
-  async fetch(request, env) {
-    // Replit 后端 URL（自动从 bot 更新）
-    const REPLIT_URL = env.REPLIT_URL || 'https://placeholder.proxy.replit.dev';
+  async fetch(request, env, ctx) {
+    // 配置的默认 URL（手动设置一次即可）
+    const MANUAL_URL = env.REPLIT_URL || null;
+    
+    // 获取当前应该使用的 Replit URL
+    async function getReplitUrl() {
+      // 1. 如果有手动配置的 URL，优先使用
+      if (MANUAL_URL && MANUAL_URL !== 'https://placeholder.proxy.replit.dev') {
+        return MANUAL_URL;
+      }
+      
+      // 2. 检查缓存是否有效
+      const now = Date.now();
+      if (cachedReplitUrl && (now - lastFetchTime) < CACHE_DURATION) {
+        return cachedReplitUrl;
+      }
+      
+      // 3. 尝试从后端获取最新 URL
+      // 这里需要一个初始 URL 来启动（第一次需要手动设置）
+      if (!MANUAL_URL) {
+        throw new Error('No REPLIT_URL configured and no cached URL available');
+      }
+      
+      try {
+        const response = await fetch(`${MANUAL_URL}/__replit_url`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          cachedReplitUrl = data.url;
+          lastFetchTime = now;
+          return cachedReplitUrl;
+        }
+      } catch (error) {
+        // 如果获取失败，继续使用现有的 URL
+        console.error('Failed to fetch latest URL:', error);
+      }
+      
+      return MANUAL_URL;
+    }
     
     // 构建目标 URL
     const url = new URL(request.url);
-    const targetUrl = new URL(url.pathname + url.search, REPLIT_URL);
     
     // 处理 OPTIONS 预检请求（CORS）
     if (request.method === 'OPTIONS') {
@@ -25,6 +70,10 @@ export default {
         }
       });
     }
+    
+    // 获取当前的 Replit URL
+    const REPLIT_URL = await getReplitUrl();
+    const targetUrl = new URL(url.pathname + url.search, REPLIT_URL);
     
     // 复制请求头
     const headers = new Headers(request.headers);

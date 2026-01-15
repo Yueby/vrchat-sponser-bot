@@ -8,6 +8,7 @@ import ExternalUser from './models/ExternalUser';
 import Guild from './models/Guild';
 import VRChatBinding from './models/VRChatBinding';
 import { SponsorData, SponsorsApiResponse } from './types/api';
+import { getCurrentReplitUrl } from './utils/cloudflare';
 import { getDefaultAvatar } from './utils/external';
 import { logger } from './utils/logger';
 
@@ -55,6 +56,22 @@ app.get('/health', (req, res) => {
       guilds: client.guilds.cache.size
     }
   });
+});
+
+// Special endpoint for Cloudflare Worker to fetch current Replit URL
+app.get('/__replit_url', (req, res) => {
+  const url = getCurrentReplitUrl();
+  if (url) {
+    res.json({ 
+      url,
+      timestamp: Date.now()
+    });
+  } else {
+    res.status(404).json({ 
+      error: 'URL not available',
+      message: 'Replit URL has not been detected yet'
+    });
+  }
 });
 
 app.get('/', (req, res) => {

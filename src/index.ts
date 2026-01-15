@@ -50,21 +50,19 @@ async function main(): Promise<void> {
       // Run mode (temporary URL)
       const runUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
       logger.info(`🌐 Replit URL (Run mode - temporary): ${runUrl}`);
-      logger.info(`📊 API Endpoint: ${runUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-      logger.info(`❤️ Health Check: ${runUrl}/health`);
+      logger.info(`📊 Direct API: ${runUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      logger.info(`❤️ Direct Health: ${runUrl}/health`);
       
       // Auto-update Cloudflare Worker if configured
       await updateCloudflareWorker();
       
-      // Show access info
+      // Show Cloudflare access info
       if (process.env.CLOUDFLARE_WORKER_NAME && process.env.CLOUDFLARE_ACCOUNT_ID) {
         const workerUrl = `https://${process.env.CLOUDFLARE_WORKER_NAME}.${process.env.CLOUDFLARE_ACCOUNT_ID}.workers.dev`;
         logger.success(`✨ Access your bot via Cloudflare (permanent URL):`);
         logger.info(`   🌐 Worker URL: ${workerUrl}`);
         logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
         logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
-      } else {
-        logger.warn(`⚠️ Cloudflare auto-update not configured. Using temporary URL.`);
       }
     } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
       // Deploy mode (permanent URL)

@@ -1,19 +1,24 @@
 import { logger } from './logger';
 
+// 存储当前的 Replit URL，供 Worker 查询（备用方案）
+let currentReplitUrl: string | null = null;
+
+/**
+ * 获取当前的 Replit URL
+ * 供 API 端点使用，让 Cloudflare Worker 查询
+ */
+export function getCurrentReplitUrl(): string | null {
+  return currentReplitUrl;
+}
+
 /**
  * 自动更新 Cloudflare Worker 环境变量
- * 将当前 Replit URL 同步到 Cloudflare Workers
+ * 使用 Cloudflare API 直接更新 Worker 的环境变量
  */
 export async function updateCloudflareWorker(): Promise<void> {
   const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
   const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
   const CLOUDFLARE_WORKER_NAME = process.env.CLOUDFLARE_WORKER_NAME;
-  
-  // 检查是否配置了 Cloudflare 相关环境变量
-  if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_WORKER_NAME) {
-    logger.debug('Cloudflare auto-update not configured, skipping...');
-    return;
-  }
   
   // 获取当前 Replit URL
   const replitUrl = process.env.REPLIT_DEV_DOMAIN 
@@ -21,18 +26,31 @@ export async function updateCloudflareWorker(): Promise<void> {
     : null;
     
   if (!replitUrl) {
-    logger.warn('⚠️ Cannot detect Replit URL for Cloudflare update');
+    logger.warn('⚠️ Cannot detect Replit URL');
+    return;
+  }
+  
+  // 保存到内存（备用方案）
+  currentReplitUrl = replitUrl;
+  
+  // 检查是否配置了 Cloudflare 自动更新
+  if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_WORKER_NAME) {
+    logger.info('ℹ️ Cloudflare auto-update not configured');
+    logger.info(`   Current Replit URL: ${replitUrl}`);
+    logger.info(`   Worker can manually fetch from: ${replitUrl}/__replit_url`);
     return;
   }
   
   try {
-    logger.info('🌐 Updating Cloudflare Worker with new URL...');
+    logger.info('🌐 Updating Cloudflare Worker environment variable...');
     logger.info(`   Current Replit URL: ${replitUrl}`);
     
-    // 1. 获取现有的环境变量
-    const getEnvUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/settings`;
+    // 使用 Cloudflare Workers 环境变量 API
+    // API 文档: https://developers.cloudflare.com/api/operations/worker-environment-variables-create-environment-variable
+    const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/environments/production/variables`;
     
-    const getResponse = await fetch(getEnvUrl, {
+    // 先获取现有的环境变量
+    const getResponse = await fetch(apiUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
@@ -40,45 +58,44 @@ export async function updateCloudflareWorker(): Promise<void> {
       }
     });
     
-    if (!getResponse.ok) {
-      const errorText = await getResponse.text();
-      throw new Error(`Failed to get worker settings (${getResponse.status}): ${errorText}`);
+    let existingVars: any[] = [];
+    if (getResponse.ok) {
+      const data = await getResponse.json() as any;
+      existingVars = data.result || [];
     }
     
-    const currentSettings = await getResponse.json() as any;
+    // 过滤掉旧的 REPLIT_URL，保留其他变量
+    const otherVars = existingVars.filter((v: any) => v.name !== 'REPLIT_URL');
     
-    // 2. 更新 REPLIT_URL 环境变量
-    const existingBindings = currentSettings.result?.bindings || [];
-    const otherBindings = existingBindings.filter((b: any) => 
-      b.type !== 'plain_text' || b.name !== 'REPLIT_URL'
-    );
-    
-    const newBindings = [
-      ...otherBindings,
+    // 添加新的 REPLIT_URL
+    const updatedVars = [
+      ...otherVars,
       {
-        type: 'plain_text',
         name: 'REPLIT_URL',
-        text: replitUrl
+        text: replitUrl,
+        type: 'secret_text'
       }
     ];
     
-    // 3. 提交更新
-    const updateUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/settings`;
-    
-    const updateResponse = await fetch(updateUrl, {
-      method: 'PATCH',
+    // 更新所有环境变量
+    const putResponse = await fetch(apiUrl, {
+      method: 'PUT',
       headers: {
         'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        bindings: newBindings
-      })
+      body: JSON.stringify(updatedVars)
     });
     
-    if (!updateResponse.ok) {
-      const errorText = await updateResponse.text();
-      throw new Error(`Failed to update worker: ${updateResponse.statusText} - ${errorText}`);
+    if (!putResponse.ok) {
+      const errorText = await putResponse.text();
+      throw new Error(`API error (${putResponse.status}): ${errorText}`);
+    }
+    
+    const result = await putResponse.json() as any;
+    
+    if (!result.success) {
+      throw new Error(`Cloudflare API error: ${JSON.stringify(result.errors)}`);
     }
     
     logger.success('✅ Cloudflare Worker updated successfully!');
@@ -88,6 +105,6 @@ export async function updateCloudflareWorker(): Promise<void> {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error('❌ Failed to update Cloudflare Worker:', errorMessage);
     logger.warn('   Bot will continue running, but Cloudflare proxy may have old URL');
-    logger.info('   💡 Tip: Check CLOUDFLARE_SETUP.md for configuration guide');
+    logger.info(`   💡 Worker can still fetch URL from: ${replitUrl}/__replit_url`);
   }
 }
