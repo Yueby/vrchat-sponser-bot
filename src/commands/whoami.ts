@@ -58,37 +58,37 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
       .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
       .addFields(
         { 
-          name: 'VRChat Information', 
+          name: '🎮 VRChat Information', 
           value: vrchatBinding 
             ? `**Name:** ${vrchatBinding.vrchatName}\n` +
               `**Bound Since:** <t:${Math.floor(vrchatBinding.firstBindTime.getTime() / 1000)}:D> (${bindDays} days)\n` +
               `**Last Update:** <t:${Math.floor(vrchatBinding.bindTime.getTime() / 1000)}:R>` +
-              (externalUser ? '\n*Also in external list*' : '')
-            : '**Not bound**\nUse `/changename` to bind your VRChat name',
+              (externalUser ? '\n✨ *Also in external list*' : '')
+            : '❌ **Not bound**\nUse `/changename` to bind your VRChat name',
           inline: false 
         },
         { 
-          name: 'Server Roles', 
+          name: '🎭 Server Roles', 
           value: roleNames.length > 0 
             ? `${roleNames.map(role => `• ${role}`).join('\n')}\n\n**Total:** ${roleNames.length} role${roleNames.length !== 1 ? 's' : ''}`
             : 'No roles',
           inline: true 
         },
         { 
-          name: 'Membership Info', 
+          name: '📊 Membership Info', 
           value: 
-            `${discordUser?.isBooster ? '**Server Booster**' : '**Member**'}\n` +
+            `${discordUser?.isBooster ? '💎 **Server Booster**' : '**Member**'}\n` +
             `**Joined:** ${discordUser?.joinedAt ? `<t:${Math.floor(discordUser.joinedAt.getTime() / 1000)}:D>` : 'Unknown'}\n` +
             `**Support Days:** ${supportDays} days` +
             (memberRank > 0 ? `\n**Join Rank:** #${memberRank} of ${totalMembers}` : ''),
           inline: true 
         },
         {
-          name: 'Server Statistics',
+          name: '📈 Server Statistics',
           value: 
             `**Bindings:** ${totalBindings}/${totalMembers} members\n` +
             `**Bind Rate:** ${totalMembers > 0 ? ((totalBindings / totalMembers) * 100).toFixed(1) : '0'}%` +
-            (vrchatBinding ? '\n*You are bound*' : '\n*You are not bound*'),
+            (vrchatBinding ? '\n✅ *You are bound*' : '\n⚠️ *You are not bound*'),
           inline: false
         }
       )
