@@ -27,7 +27,7 @@ export async function handleServerApi(interaction: ChatInputCommandInteraction):
         name: interaction.guild!.name,
         iconURL: interaction.guild!.iconURL() || undefined
       })
-      .setTitle(enabled ? '🟢 API Access Enabled' : '🔴 API Access Disabled')
+      .setTitle(enabled ? 'API Access Enabled' : 'API Access Disabled')
       .setDescription(
         enabled
           ? 'The VRChat API endpoint is now **accessible**.\nVRChat worlds can now fetch sponsor data from this server.'
@@ -36,17 +36,17 @@ export async function handleServerApi(interaction: ChatInputCommandInteraction):
       .setColor(enabled ? EMBED_COLORS.SUCCESS : EMBED_COLORS.ERROR)
       .addFields(
         {
-          name: '🌐 API Endpoint',
+          name: 'API Endpoint',
           value: `\`\`\`\n/api/vrchat/sponsors/${guildId}\n\`\`\``,
           inline: false
         },
         {
-          name: '📊 Status',
-          value: enabled ? '🟢 **Active**' : '🔴 **Inactive**',
+          name: 'Status',
+          value: enabled ? '**Active**' : '**Inactive**',
           inline: true
         },
         {
-          name: '🔐 Access Control',
+          name: 'Access Control',
           value: 'Only server owner can toggle',
           inline: true
         }
@@ -59,7 +59,7 @@ export async function handleServerApi(interaction: ChatInputCommandInteraction):
 
     if (enabled) {
       embed.addFields({
-        name: '💡 How to Use',
+        name: 'How to Use',
         value:
           '1. Copy the API endpoint above\n' +
           '2. Use it in your VRChat Udon script\n' +

@@ -178,7 +178,7 @@ export async function handleAdminSearch(interaction: ChatInputCommandInteraction
           name: 'Admin Action: Search Results',
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
-        .setTitle('🔍 No Results Found')
+        .setTitle('No Results Found')
         .setDescription(`No users found matching **${searchValue}** in ${searchType} search.`)
         .setColor(EMBED_COLORS.INFO)
         .setFooter({
@@ -197,7 +197,7 @@ export async function handleAdminSearch(interaction: ChatInputCommandInteraction
         name: 'Admin Action: Search Results',
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
-      .setTitle(`🔍 Search Results: ${searchType}`)
+      .setTitle(`Search Results: ${searchType}`)
       .setDescription(
         `Found **${results.length}** result${results.length !== 1 ? 's' : ''} for **${searchValue}**\n\n` +
         `**Search Type:** ${searchType === 'vrchat' ? 'VRChat Name' : searchType === 'discord' ? 'Discord ID' : 'Role'}`
@@ -235,7 +235,7 @@ export async function handleAdminSearch(interaction: ChatInputCommandInteraction
       }
 
       embed.addFields({
-        name: `${i + 1}. ${result.type === 'member' ? '👤 Member' : '✨ External'}`,
+        name: `${i + 1}. ${result.type === 'member' ? 'Member' : 'External'}`,
         value: fieldValue || 'No additional info',
         inline: false
       });
@@ -243,7 +243,7 @@ export async function handleAdminSearch(interaction: ChatInputCommandInteraction
 
     if (results.length > 10) {
       embed.addFields({
-        name: '⚠️ Results Truncated',
+        name: 'Note',
         value: `Showing first 10 of ${results.length} results. Refine your search for more specific results.`,
         inline: false
       });

@@ -23,8 +23,8 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
           name: username,
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
         })
-        .setTitle('📜 Binding History')
-        .setDescription('🔴 **No binding found**\n\n*You haven\'t bound a VRChat name yet.*\n*Use `/changename` to create your first binding!*')
+        .setTitle('Binding History')
+        .setDescription('**No binding found**\n\nYou haven\'t bound a VRChat name yet.\nUse `/changename` to create your first binding!')
         .setColor(EMBED_COLORS.ERROR)
         .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
         .setFooter({
@@ -46,7 +46,7 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
         name: username,
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
       })
-      .setTitle('📜 VRChat Binding History')
+      .setTitle('VRChat Binding History')
       .setDescription(
         `**Current Name:** ${vrchatBinding.vrchatName}\n` +
         `**Total Changes:** ${totalChanges}\n` +
@@ -73,21 +73,21 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
       });
 
       embed.addFields({
-        name: '🕐 Previous Names',
+        name: 'Previous Names',
         value: historyText || 'No history available',
         inline: false
       });
 
       if (sortedHistory.length > 10) {
         embed.addFields({
-          name: '⚠️ History Truncated',
+          name: 'Note',
           value: `Showing 10 most recent of ${sortedHistory.length} total changes.`,
           inline: false
         });
       }
     } else {
       embed.addFields({
-        name: '🕐 Previous Names',
+        name: 'Previous Names',
         value: '*No name changes yet*\n\nYour history will appear here when you update your VRChat name.',
         inline: false
       });
@@ -98,7 +98,7 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
     const avgDaysPerChange = totalChanges > 1 ? Math.floor(bindDays / (totalChanges - 1)) : bindDays;
 
     embed.addFields({
-      name: '📊 Statistics',
+      name: 'Statistics',
       value: 
         `**Last Update:** <t:${Math.floor(vrchatBinding.bindTime.getTime() / 1000)}:R> (${daysSinceLastChange} days ago)\n` +
         `**Avg Time Between Changes:** ${avgDaysPerChange} days`,

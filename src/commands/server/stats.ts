@@ -42,7 +42,7 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
         name: `${guildInfo.name}`,
         iconURL: guildInfo.iconURL() || undefined
       })
-      .setTitle('📊 Server Statistics')
+      .setTitle('Server Statistics')
       .setDescription(
         `**Owner:** <@${guild.ownerId}>\n` +
         `**Bot Active:** ${botJoinedDays} days`
@@ -51,7 +51,7 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
       .setThumbnail(guildInfo.iconURL({ size: AVATAR_SIZES.LARGE }) || null)
       .addFields(
         { 
-          name: '📈 Database Statistics', 
+          name: 'Database Statistics', 
           value: 
             `**Members:** ${memberCount}\n` +
             `**Bindings:** ${bindingCount}\n` +
@@ -59,12 +59,12 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
           inline: true 
         },
         { 
-          name: '⚙️ API Status', 
-          value: guild.apiEnabled ? '🟢 **Enabled**' : '🔴 **Disabled**',
+          name: 'API Status', 
+          value: guild.apiEnabled ? '**Enabled**' : '**Disabled**',
           inline: true 
         },
         { 
-          name: '🕐 Activity Timeline', 
+          name: 'Activity Timeline', 
           value: 
             `**Last Sync:** ${guild.lastSyncAt ? `<t:${Math.floor(guild.lastSyncAt.getTime() / 1000)}:R>` : 'Never'}\n` +
             `**Last API Call:** ${guild.lastApiCallAt ? `<t:${Math.floor(guild.lastApiCallAt.getTime() / 1000)}:R>` : 'Never'}\n` +

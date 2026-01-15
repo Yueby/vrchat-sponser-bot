@@ -30,7 +30,7 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
           name: 'Admin Action: Unbind User',
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
-        .setTitle('✅ Unbind Successful')
+        .setTitle('Unbind Successful')
         .setDescription(
           `The VRChat binding for **${targetUser.username}** has been removed.`
         )
@@ -38,17 +38,17 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
         .setThumbnail(targetUser.displayAvatarURL({ size: AVATAR_SIZES.MEDIUM }))
         .addFields(
           {
-            name: '👤 Target User',
+            name: 'Target User',
             value: `**Discord:** ${targetUser.username}\n**ID:** \`${targetUser.id}\``,
             inline: true
           },
           {
-            name: '🎮 VRChat Info',
+            name: 'VRChat Info',
             value: `**Name:** ${result.vrchatName}\n**Bound Days:** ${bindDays} days`,
             inline: true
           },
           {
-            name: '📅 Binding History',
+            name: 'Binding History',
             value:
               `**First Bound:** <t:${Math.floor(result.firstBindTime.getTime() / 1000)}:D>\n` +
               `**Last Update:** <t:${Math.floor(result.bindTime.getTime() / 1000)}:R>`,
@@ -69,7 +69,7 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
           name: 'Admin Action: Check Binding',
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
-        .setTitle('ℹ️ No Binding Found')
+        .setTitle('No Binding Found')
         .setDescription(
           `User **${targetUser.username}** has no VRChat binding in this server.`
         )

@@ -122,7 +122,7 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
         name: member.displayName,
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
       })
-      .setTitle(isNewBinding ? '✨ VRChat Binding Created' : '✅ VRChat Name Updated')
+      .setTitle(isNewBinding ? 'VRChat Binding Created' : 'VRChat Name Updated')
       .setDescription(
         isNewBinding
           ? `Your VRChat name has been **successfully bound** to your Discord account!`
@@ -132,17 +132,17 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
       .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
       .addFields(
         {
-          name: '🎮 VRChat Information',
+          name: 'VRChat Information',
           value: `**Name:** ${cleanName}${isNewBinding ? '\n\n*First time binding - Welcome!*' : ''}`,
           inline: false
         },
         {
-          name: '🎭 Current Roles',
+          name: 'Current Roles',
           value: roleNames.length > 0 ? roleNames.map(r => `• ${r}`).join('\n') : 'No roles',
           inline: true
         },
         {
-          name: '💎 Membership Status',
+          name: 'Membership Status',
           value: isMemberBooster(member) ? '**Server Booster**' : '**Member**',
           inline: true
         }

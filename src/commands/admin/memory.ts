@@ -29,7 +29,7 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
           name: 'Admin Action: Memory Status',
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
-        .setTitle('📊 Memory & Cache Status')
+        .setTitle('Memory & Cache Status')
         .setDescription(
           `Real-time memory and cache statistics for the bot.`
         )
@@ -95,7 +95,7 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
           name: 'Admin Action: Clear Cache',
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
-        .setTitle('✅ Cache Cleared')
+        .setTitle('Cache Cleared')
         .setDescription(
           `Successfully cleared Discord.js caches to free up memory.`
         )

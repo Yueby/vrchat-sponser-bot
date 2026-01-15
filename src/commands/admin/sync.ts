@@ -38,7 +38,7 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
         name: 'Admin Action: Manual Sync',
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
-      .setTitle('✅ Database Sync Complete')
+      .setTitle('Database Sync Complete')
       .setDescription(
         `Successfully synchronized all member data with the database.`
       )

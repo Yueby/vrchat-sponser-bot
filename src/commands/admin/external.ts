@@ -86,17 +86,17 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
         name: 'Admin Action: Add External User',
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
-      .setTitle('✅ External User Added')
+      .setTitle('External User Added')
       .setDescription(`Successfully added external user **${cleanVrchatName}**`)
       .setColor(EMBED_COLORS.SUCCESS)
       .addFields(
         {
-          name: '🎮 VRChat Information',
+          name: 'VRChat Information',
           value: `**Name:** ${cleanVrchatName}${displayName ? `\n**Display:** ${displayName}` : ''}`,
           inline: true
         },
         {
-          name: '🎭 Assigned Roles',
+          name: 'Assigned Roles',
           value: roleNames.map(r => `• ${r}`).join('\n'),
           inline: true
         }
@@ -109,7 +109,7 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
 
     if (discordUserId) {
       embed.addFields({
-        name: '🔗 Discord Account',
+        name: 'Discord Account',
         value: `<@${discordUserId}>`,
         inline: false
       });
@@ -117,7 +117,7 @@ export async function handleExternalAdd(interaction: ChatInputCommandInteraction
 
     if (notes) {
       embed.addFields({
-        name: '📝 Notes',
+        name: 'Notes',
         value: notes.substring(0, DISCORD_LIMITS.EMBED_FIELD_VALUE_MAX),
         inline: false
       });
@@ -208,17 +208,17 @@ export async function handleExternalUpdate(interaction: ChatInputCommandInteract
         name: 'Admin Action: Update External User',
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
-      .setTitle('✅ External User Updated')
+      .setTitle('External User Updated')
       .setDescription(`Successfully updated external user **${user.vrchatName}**`)
       .setColor(EMBED_COLORS.SUCCESS)
       .addFields(
         {
-          name: '🎮 VRChat Information',
+          name: 'VRChat Information',
           value: `**Name:** ${updatedUser!.vrchatName}${updatedUser!.displayName ? `\n**Display:** ${updatedUser!.displayName}` : ''}`,
           inline: true
         },
         {
-          name: '🎭 Current Roles',
+          name: 'Current Roles',
           value: updatedUser!.virtualRoles.map(r => `• ${r}`).join('\n'),
           inline: true
         }
@@ -270,22 +270,22 @@ export async function handleExternalRemove(interaction: ChatInputCommandInteract
         name: 'Admin Action: Remove External User',
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
-      .setTitle('✅ External User Removed')
+      .setTitle('External User Removed')
       .setDescription(`Successfully removed external user **${vrchatName}**`)
       .setColor(EMBED_COLORS.ERROR)
       .addFields(
         {
-          name: '🎮 VRChat Name',
+          name: 'VRChat Name',
           value: vrchatName,
           inline: true
         },
         {
-          name: '🎭 Had Roles',
+          name: 'Had Roles',
           value: roles.map(r => `• ${r}`).join('\n'),
           inline: true
         },
         {
-          name: '📅 Record Duration',
+          name: 'Record Duration',
           value: `${addedDays} days`,
           inline: true
         }
@@ -350,7 +350,7 @@ export async function handleExternalList(interaction: ChatInputCommandInteractio
         name: interaction.guild!.name,
         iconURL: interaction.guild!.iconURL() || undefined
       })
-      .setTitle('📋 External Users List')
+      .setTitle('External Users List')
       .setDescription(
         roleFilter
           ? `Showing external users with role **${roleFilter}**`
