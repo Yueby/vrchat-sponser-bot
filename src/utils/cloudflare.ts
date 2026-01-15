@@ -1,16 +1,5 @@
 import { logger } from './logger';
 
-// 存储当前的 Replit URL，供 Worker 查询（备用方案）
-let currentReplitUrl: string | null = null;
-
-/**
- * 获取当前的 Replit URL
- * 供 API 端点使用，让 Cloudflare Worker 查询
- */
-export function getCurrentReplitUrl(): string | null {
-  return currentReplitUrl;
-}
-
 /**
  * 获取 Cloudflare Workers.dev 子域名
  */
@@ -50,9 +39,6 @@ export async function updateCloudflareWorker(): Promise<void> {
     logger.warn('⚠️ Cannot detect Replit URL');
     return;
   }
-  
-  // 保存到内存（备用方案）
-  currentReplitUrl = replitUrl;
   
   // 检查是否配置了 Cloudflare
   if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_WORKER_NAME) {
