@@ -14,9 +14,8 @@ async function main(): Promise<void> {
     // Validate environment variables first
     validateEnv();
     
-    logger.info('═══════════════════════════════════════════════════════');
-    logger.info('           VRChat Sponsor Bot - Starting              ');
-    logger.info('═══════════════════════════════════════════════════════');
+    logger.info('');
+    logger.info('[VRChat Sponsor Bot]');
     
     // 1. Start Web Server
     startServer();
@@ -40,10 +39,10 @@ async function main(): Promise<void> {
     // 4. Perform Health Check
     await performStartupHealthCheck();
     
-    logger.info('═══════════════════════════════════════════════════════');
+    logger.info('');
+    logger.info('[Ready]');
     logger.success('Bot is ready!');
     logger.success('Server started successfully!');
-    logger.info('═══════════════════════════════════════════════════════');
     
     // Auto-update Cloudflare Worker if configured
     await updateCloudflareWorker();

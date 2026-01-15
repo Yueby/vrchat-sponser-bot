@@ -24,7 +24,7 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE })
         })
         .setTitle('Binding History')
-        .setDescription('🔴 No binding found\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nYou haven\'t bound a VRChat name yet.\nUse `/changename` to create your first binding!')
+        .setDescription('🔴 No binding found\n\nYou haven\'t bound a VRChat name yet.\nUse `/changename` to create your first binding!')
         .setColor(EMBED_COLORS.ERROR)
         .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
         .setFooter({
@@ -54,8 +54,6 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
       )
       .setColor(EMBED_COLORS.INFO)
       .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }));
-
-    embed.addFields({ name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false });
 
     // 添加历史记录
     if (vrchatBinding.nameHistory && vrchatBinding.nameHistory.length > 0) {
@@ -94,8 +92,6 @@ export async function handleHistory(interaction: ChatInputCommandInteraction): P
         inline: false
       });
     }
-
-    embed.addFields({ name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false });
 
     // 添加统计信息
     const daysSinceLastChange = Math.floor((Date.now() - vrchatBinding.bindTime.getTime()) / (1000 * 60 * 60 * 24));

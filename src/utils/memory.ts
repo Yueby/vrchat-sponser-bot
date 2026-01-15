@@ -101,17 +101,13 @@ export function logMemoryReport() {
   const memory = getMemoryUsage();
   const cache = getCacheStats();
   
-  logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  logger.info('MEMORY REPORT');
-  logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  logger.info('[Memory Report]');
   logger.info(`Heap Used:  ${memory.heapUsed} MB`);
   logger.info(`Heap Total: ${memory.heapTotal} MB`);
   logger.info(`RSS:        ${memory.rss} MB`);
   logger.info(`External:   ${memory.external} MB`);
-  logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   logger.info(`Guilds:     ${cache.guilds}`);
   logger.info(`Members:    ${cache.members}`);
   logger.info(`Users:      ${cache.users}`);
   logger.info(`Roles:      ${cache.roles}`);
-  logger.info('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }

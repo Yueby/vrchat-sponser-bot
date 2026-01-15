@@ -63,15 +63,14 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
             ? `Name: ${vrchatBinding.vrchatName}\n` +
               `Bound Since: <t:${Math.floor(vrchatBinding.firstBindTime.getTime() / 1000)}:D> (${bindDays} days)\n` +
               `Last Update: <t:${Math.floor(vrchatBinding.bindTime.getTime() / 1000)}:R>` +
-              (externalUser ? '\n━━━━━━━━━━━━━━━━━\nAlso in external list' : '')
+              (externalUser ? '\nAlso in external list' : '')
             : '🔴 Not bound\nUse `/changename` to bind your VRChat name',
           inline: false 
         },
-        { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
         { 
           name: 'Server Roles', 
           value: roleNames.length > 0 
-            ? `${roleNames.map(role => `• ${role}`).join('\n')}\n━━━━━━━━━━━━━━━━━\nTotal: ${roleNames.length} role${roleNames.length !== 1 ? 's' : ''}`
+            ? `${roleNames.map(role => `• ${role}`).join('\n')}\nTotal: ${roleNames.length} role${roleNames.length !== 1 ? 's' : ''}`
             : 'No roles',
           inline: true 
         },
@@ -81,10 +80,9 @@ export async function handleWhoAmI(interaction: ChatInputCommandInteraction): Pr
             `${discordUser?.isBooster ? 'Server Booster' : 'Member'}\n` +
             `Joined: ${discordUser?.joinedAt ? `<t:${Math.floor(discordUser.joinedAt.getTime() / 1000)}:D>` : 'Unknown'}\n` +
             `Support Days: ${supportDays} days` +
-            (memberRank > 0 ? `\n━━━━━━━━━━━━━━━━━\nJoin Rank: #${memberRank} of ${totalMembers}` : ''),
+            (memberRank > 0 ? `\nJoin Rank: #${memberRank} of ${totalMembers}` : ''),
           inline: true 
         },
-        { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
         {
           name: 'Server Statistics',
           value: 

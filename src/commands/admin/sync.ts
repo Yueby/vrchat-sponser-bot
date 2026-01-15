@@ -60,7 +60,6 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
             `Completed: <t:${timestamp}:R>`,
           inline: true
         },
-        { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
         {
           name: 'What Was Synced',
           value:

@@ -47,7 +47,6 @@ export async function handleAdminUnbind(interaction: ChatInputCommandInteraction
             value: `Name: ${result.vrchatName}\nBound Days: ${bindDays} days`,
             inline: true
           },
-          { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
           {
             name: 'Binding History',
             value:

@@ -15,7 +15,6 @@ export function validateEnv(): void {
   }
   
   logger.info('');
-  logger.info('────────── Environment Validation ─────────');
+  logger.info('[Environment]');
   logger.success('Environment variables validated');
-  logger.info('───────────────────────────────────────────');
 }

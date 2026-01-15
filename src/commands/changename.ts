@@ -133,10 +133,9 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
       .addFields(
         {
           name: 'VRChat Information',
-          value: `Name: ${cleanName}${isNewBinding ? '\n━━━━━━━━━━━━━━━━━\nFirst time binding - Welcome!' : ''}`,
+          value: `Name: ${cleanName}${isNewBinding ? '\nFirst time binding - Welcome!' : ''}`,
           inline: false
         },
-        { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
         {
           name: 'Current Roles',
           value: roleNames.length > 0 ? roleNames.map(r => `• ${r}`).join('\n') : 'No roles',

@@ -243,9 +243,8 @@ export const startServer = () => {
   const port = Number(PORT);
   const server = app.listen(port, '0.0.0.0', () => {
     logger.info('');
-    logger.info('─────────────── Web Server ────────────────');
-    logger.success(`Web server listening on port ${port}`);
-    logger.info('───────────────────────────────────────────');
+    logger.info('[Web Server]');
+    logger.success(`Listening on port ${port}`);
   });
   
   server.on('error', (error: NodeJS.ErrnoException) => {

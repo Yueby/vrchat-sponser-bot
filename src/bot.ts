@@ -48,22 +48,19 @@ export const client: Client = new Client({
 // Bot 启动时自动同步所有服务器
 client.once('clientReady', async () => {
   logger.info('');
-  logger.info('─────────────── Discord Bot ───────────────');
-  logger.bot(`Bot logged in as ${client.user?.tag}`);
+  logger.info('[Discord Bot]');
+  logger.bot(`Logged in as ${client.user?.tag}`);
   logger.network(`Connected to ${client.guilds.cache.size} servers`);
-  logger.info('───────────────────────────────────────────');
       
   // 自动同步所有服务器
   logger.info('');
-  logger.info('─────────────── Sync Guilds ───────────────');
+  logger.info('[Sync Guilds]');
   await syncAllGuilds(client.guilds.cache);
-  logger.info('───────────────────────────────────────────');
   
   // 🚀 启动内存监控
   logger.info('');
-  logger.info('────────────── Memory Monitor ─────────────');
+  logger.info('[Memory Monitor]');
   startMemoryMonitor(MONITORING.MEMORY_CHECK_INTERVAL);
-  logger.info('───────────────────────────────────────────');
 });
 
 // Bot 加入新服务器
@@ -122,7 +119,7 @@ export const connectDB = async () => {
     if (!uri) throw new Error('MONGO_URI is not defined');
     
     logger.info('');
-    logger.info('────────────────── MongoDB ────────────────');
+    logger.info('[MongoDB]');
     await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
@@ -134,7 +131,6 @@ export const connectDB = async () => {
       retryReads: true        // 自动重试读操作
     });
     logger.success('Connected to MongoDB Atlas');
-    logger.info('───────────────────────────────────────────');
     
     // MongoDB 连接事件监听
     mongoose.connection.on('disconnected', () => {

@@ -127,22 +127,17 @@ export async function updateCloudflareWorker(): Promise<void> {
   // 检查是否配置了 Cloudflare
   if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_WORKER_NAME) {
     logger.info('');
-    logger.info('───────────── Cloudflare Worker ───────────');
-    logger.info('Cloudflare Worker integration not configured');
+    logger.info('[Cloudflare Worker]');
+    logger.info('Not configured');
     logger.info(`   Platform: ${platform}`);
     logger.info(`   Backend URL: ${backendUrl}`);
-    logger.info(`   To enable automatic Worker updates, configure:`);
-    logger.info(`   - CLOUDFLARE_API_TOKEN`);
-    logger.info(`   - CLOUDFLARE_ACCOUNT_ID`);
-    logger.info(`   - CLOUDFLARE_WORKER_NAME`);
-    logger.info('───────────────────────────────────────────');
     return;
   }
   
   try {
     logger.info('');
-    logger.info('───────────── Cloudflare Worker ───────────');
-    logger.info(`Updating Cloudflare Worker...`);
+    logger.info('[Cloudflare Worker]');
+    logger.info('Updating...');
     logger.info(`   Platform: ${platform}`);
     logger.info(`   Backend URL: ${backendUrl}`);
     
@@ -184,7 +179,6 @@ export async function updateCloudflareWorker(): Promise<void> {
     } else {
       logger.success('Cloudflare Worker updated successfully!');
     }
-    logger.info('───────────────────────────────────────────');
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

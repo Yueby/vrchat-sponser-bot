@@ -53,7 +53,6 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
               `Roles: ${cache.roles}`,
             inline: true
           },
-          { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
           {
             name: 'Status',
             value:
@@ -118,7 +117,6 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
               `Users: ${afterCache.users}`,
             inline: true
           },
-          { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
           {
             name: 'Cleared',
             value:

@@ -63,7 +63,6 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
           value: guild.apiEnabled ? 'Enabled' : 'Disabled',
           inline: true 
         },
-        { name: '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', value: '', inline: false },
         { 
           name: 'Activity Timeline', 
           value: 
