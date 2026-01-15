@@ -5,9 +5,8 @@ modules = ["nodejs-20", "nix"]
 channel = "stable-25_05"
 
 [deployment]
-build = "pnpm install --frozen-lockfile && pnpm run build"
-run = ["pnpm", "start"]
+build = "NODE_ENV=development pnpm install --frozen-lockfile && pnpm run build"
+run = ["sh", "-c", "NODE_ENV=production pnpm start"]
 
 [env]
-NODE_ENV = "production"
 LOG_TIMESTAMP = "false"
