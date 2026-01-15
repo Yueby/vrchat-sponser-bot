@@ -67,14 +67,36 @@ export async function updateCloudflareWorker(): Promise<void> {
   
   // 自动获取并显示 Worker URL
   const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
+  let workerUrl: string | null = null;
+  
   if (subdomain) {
-    const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
+    workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
     logger.success('✅ Worker URL detected!');
     logger.info(`   🌐 Worker URL: ${workerUrl}`);
-    logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-    logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
   }
   
-  logger.info(`💡 Worker will automatically fetch latest URL from: ${replitUrl}/__replit_url`);
-  logger.info('   ℹ️ This is the recommended approach for GitHub-deployed Workers');
+  // 通知 Worker 更新 URL
+  if (workerUrl) {
+    try {
+      const updateUrl = `${workerUrl}/__update_url?url=${encodeURIComponent(replitUrl)}`;
+      const response = await fetch(updateUrl, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      
+      if (response.ok) {
+        logger.success('✅ Worker URL updated successfully!');
+        logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+        logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
+      } else {
+        logger.warn(`⚠️ Failed to update Worker: ${response.status}`);
+        logger.info(`   💡 Worker will query from: ${replitUrl}/__replit_url`);
+      }
+    } catch (error) {
+      logger.warn('⚠️ Could not reach Worker (may not be deployed yet)');
+      logger.info(`   💡 Worker will query from: ${replitUrl}/__replit_url`);
+    }
+  } else {
+    logger.info(`💡 Worker will automatically fetch latest URL from: ${replitUrl}/__replit_url`);
+  }
 }
