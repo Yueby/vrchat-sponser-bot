@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Discord Bot with MongoDB",
   "main": "dist/index.js",
-  "packageManager": "pnpm@latest",
+  "packageManager": "pnpm@9",
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
