@@ -24,8 +24,18 @@ async function main(): Promise<void> {
     await connectDB();
     logger.success('Database connected');
 
-    // 3. Login Bot
+    // 3. Login Bot and wait for ready
     await client.login(process.env.DISCORD_TOKEN!);
+    
+    // Wait for client to be fully ready
+    await new Promise<void>((resolve) => {
+      if (client.isReady()) {
+        resolve();
+      } else {
+        client.once('clientReady', () => resolve());
+      }
+    });
+    
     logger.success('Discord login successful');
     
     // 4. Perform Health Check
