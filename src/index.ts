@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { client, connectDB } from './bot';
 import { startServer } from './server';
+import { updateCloudflareWorker } from './utils/cloudflare';
 import { validateEnv } from './utils/env';
 import { logger } from './utils/logger';
 
@@ -51,7 +52,20 @@ async function main(): Promise<void> {
       logger.info(`🌐 Replit URL (Run mode - temporary): ${runUrl}`);
       logger.info(`📊 API Endpoint: ${runUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
       logger.info(`❤️ Health Check: ${runUrl}/health`);
-      logger.warn(`⚠️ This is a temporary URL. For a permanent URL, use Deploy.`);
+      
+      // Auto-update Cloudflare Worker if configured
+      await updateCloudflareWorker();
+      
+      // Show access info
+      if (process.env.CLOUDFLARE_WORKER_NAME && process.env.CLOUDFLARE_ACCOUNT_ID) {
+        const workerUrl = `https://${process.env.CLOUDFLARE_WORKER_NAME}.${process.env.CLOUDFLARE_ACCOUNT_ID}.workers.dev`;
+        logger.success(`✨ Access your bot via Cloudflare (permanent URL):`);
+        logger.info(`   🌐 Worker URL: ${workerUrl}`);
+        logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+        logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
+      } else {
+        logger.warn(`⚠️ Cloudflare auto-update not configured. Using temporary URL.`);
+      }
     } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
       // Deploy mode (permanent URL)
       const deployUrl = `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app`;
