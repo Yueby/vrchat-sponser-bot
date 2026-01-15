@@ -1,15 +1,15 @@
-# Cloudflare 自动代理配置指南
+# Cloudflare 智能代理配置指南  
 
-本指南将帮你配置 Cloudflare Workers，实现**永久固定域名** + **完全自动的 URL 更新**。
+本指南将帮你配置 Cloudflare Workers，实现**永久固定域名** + **智能自动追踪**。
 
 ## 🎯 最终效果
 
 - ✅ 获得固定的访问域名：`https://your-worker.your-account.workers.dev`
-- ✅ **完全自动更新**：Replit 每次启动自动更新 Cloudflare
-- ✅ 双重保障：自动更新失败时，Worker 还能主动查询
+- ✅ **智能自动追踪**：Worker 自动从 Bot 获取最新 URL
+- ✅ **极简配置**：只需 3 步，无需 API Token
 - ✅ 完全免费（Cloudflare Workers 免费版：每天 10 万次请求）
 
-## 📋 配置步骤
+## 📋 配置步骤（超简单！）
 
 ### 步骤 1：创建 Cloudflare Worker
 
@@ -20,60 +20,37 @@
 5. 将 `cloudflare-worker.js` 文件的内容复制粘贴到编辑器中
 6. 点击 **Deploy**
 
-### 步骤 2：获取 Cloudflare API Token
+### 步骤 2：配置初始 URL
 
-1. 访问：https://dash.cloudflare.com/profile/api-tokens
-2. 点击 **Create Token**
-3. 使用 **Edit Cloudflare Workers** 模板
-4. 配置权限：
-   - **Account** → Workers Scripts → **Edit**
-5. 点击 **Continue to summary** → **Create Token**
-6. **复制并保存**生成的 Token（只显示一次！）
+1. 在 Replit 上运行你的 Bot
+2. 从启动日志复制 Replit URL（类似 `https://xxxxx.proxy.replit.dev`）
+3. 在 Cloudflare Worker 页面，进入 **Settings** → **Variables**
+4. 点击 **Add variable**
+5. 添加环境变量：
+   - Name: `REPLIT_URL`
+   - Value: 粘贴你复制的完整 URL
+   - Type: **Text**（不要选 Secret）
+6. 点击 **Deploy**
 
-### 步骤 3：获取 Account ID
+### 步骤 3：（可选）在 Replit 配置显示信息
 
-1. 在 Cloudflare Dashboard 任意页面右侧找到 **Account ID**
-2. 或访问 Worker 页面，URL 中包含 Account ID
-3. 复制这个 ID（类似 `52181459d0b5379eab8c11a3cd8b0b84`）
-
-### 步骤 4：在 Replit 配置环境变量
-
-在 Replit 的 **Secrets** 工具（左侧工具栏锁图标）中添加：
+在 Replit 的 **Secrets** 工具中添加（仅用于显示，不影响功能）：
 
 ```bash
-CLOUDFLARE_API_TOKEN=你的API_Token
-CLOUDFLARE_ACCOUNT_ID=你的Account_ID  
 CLOUDFLARE_WORKER_NAME=vrchat-bot-proxy
+CLOUDFLARE_ACCOUNT_ID=你的Account_ID
 ```
 
-**重要提示：**
-- 使用 Replit **Secrets** 工具，不要写在代码里
-- `CLOUDFLARE_WORKER_NAME` 是你在步骤1创建的 Worker 名称
-- **不要**把 Token 提交到 Git 仓库！
+这样启动时会显示完整的 Worker URL。
 
-### 步骤 5：测试自动更新
+### 步骤 4：测试 Worker
 
-1. 在 Replit 上**重启你的 Bot**（点击 Stop 然后 Run）
-
-2. 查看启动日志，应该看到：
-   ```
-   [INFO] 🌐 Replit URL (Run mode - temporary): https://xxxxx.proxy.replit.dev
-   [INFO] 🌐 Updating Cloudflare Worker environment variable...
-   [INFO]    Current Replit URL: https://xxxxx.proxy.replit.dev
-   [INFO] ✅ Cloudflare Worker updated successfully!
-   [INFO]    Worker URL: https://vrchat-bot-proxy.xxxxx.workers.dev
-   [INFO] ✨ Access your bot via Cloudflare (permanent URL):
-   [INFO]    🌐 Worker URL: https://vrchat-bot-proxy.xxxxx.workers.dev
-   [INFO]    📊 API Endpoint: https://vrchat-bot-proxy.xxxxx.workers.dev/api/vrchat/sponsors/YOUR_GUILD_ID
-   [INFO]    ❤️ Health Check: https://vrchat-bot-proxy.xxxxx.workers.dev/health
-   ```
-
-3. 访问你的 Worker URL 测试健康检查：
+1. 访问你的 Worker URL 测试健康检查：
    ```
    https://your-worker.your-account.workers.dev/health
    ```
 
-4. 你应该看到类似的响应：
+2. 你应该看到类似的响应：
    ```json
    {
      "status": "ok",
@@ -87,10 +64,16 @@ CLOUDFLARE_WORKER_NAME=vrchat-bot-proxy
    }
    ```
 
-5. 测试 API 端点：
+3. 测试 API 端点：
    ```
    https://your-worker.your-account.workers.dev/api/vrchat/sponsors/YOUR_GUILD_ID
    ```
+
+4. **URL 自动更新测试**：
+   - 在 Replit 重启 Bot（Replit URL 可能会变化）
+   - 等待 1 分钟（Worker 缓存过期）
+   - 再次访问 Worker URL，应该仍然正常工作
+   - Worker 会自动从 `/__replit_url` 获取最新 URL
 
 ## 🚀 使用你的固定域名
 
@@ -122,32 +105,34 @@ string apiUrl = "https://your-worker.your-account.workers.dev/api/vrchat/sponsor
 VRChat 世界
     ↓
 Cloudflare Worker (固定域名)
-    ↓ (使用最新URL)
+    ↓ (智能查询最新 URL)
 Replit Backend (临时 URL)
-    ↓ (启动时自动更新Worker)
+    ↓ (提供查询端点)
 MongoDB + Discord API
 ```
 
-### 自动更新机制：
+### 智能追踪机制：
 
-1. **配置 API Token**：在 Replit Secrets 中配置 Cloudflare 凭证
-2. **Replit 启动**：Bot 检测当前 URL
-3. **自动调用 API**：Bot 调用 Cloudflare API，更新 Worker 的 `REPLIT_URL` 环境变量
-4. **Worker 更新**：Cloudflare 立即生效，所有请求转发到新 URL
-5. **双重保障**：如果 API 更新失败，Worker 还能通过 `/__replit_url` 端点主动查询
+1. **初始配置**：手动在 Worker 设置初始 `REPLIT_URL`（只需一次）
+2. **Replit 启动**：Bot 将当前 URL 保存到内存
+3. **Worker 请求**：
+   - 首先使用配置的 `REPLIT_URL`
+   - 每分钟通过 `/__replit_url` 端点获取最新 URL
+   - 缓存最新 URL，减少查询次数
+4. **URL 变化时**：Worker 自动检测并更新，无需人工干预
 
 ### 优势：
 
-- ✅ **完全自动**：每次启动自动更新，无需人工干预
-- ✅ **即时生效**：API 更新后立即生效
-- ✅ **双重保障**：API + 查询端点双重机制
-- ✅ **零维护**：配置一次，永久自动
+- ✅ **极简配置**：只需设置一次初始 URL，无需 API Token
+- ✅ **智能缓存**：减少不必要的查询，提升性能
+- ✅ **零维护**：URL 变化自动追踪
+- ✅ **降级保护**：如果查询失败，继续使用缓存的 URL
 
 ## ❓ 常见问题
 
-### Q: API Token 安全吗？
+### Q: 为什么需要手动设置初始 URL？
 
-A: 使用 Replit Secrets 存储是安全的。Token 权限仅限于编辑 Workers，且不会提交到 Git。
+A: Worker 需要一个起点来访问 Bot 的 `/__replit_url` 端点。设置一次后，Worker 就能自动追踪所有后续的 URL 变化。
 
 ### Q: Worker 免费版有什么限制？
 
@@ -159,19 +144,19 @@ A: 可以！在 Worker Settings → Triggers → Custom Domains 添加。
 
 ### Q: Replit URL 变化后多久会更新？
 
-A: Bot 启动时立即调用 API 更新，秒级生效。如果 API 失败，Worker 会每分钟通过 `/__replit_url` 端点查询。
+A: Worker 会在下次请求时自动获取最新 URL（缓存1分钟），基本上是实时的。
 
 ### Q: 如果不配置 Cloudflare 会怎样？
 
-A: Bot 仍然正常运行，只是使用 Replit 的临时 URL。日志会提示 "Cloudflare auto-update not configured"。
+A: Bot 仍然正常运行，只是使用 Replit 的临时 URL，需要手动管理 URL 变化。
 
-### Q: API 更新失败怎么办？
+### Q: `/__replit_url` 端点安全吗？
 
-A: Bot 会在日志中显示错误，但不会影响运行。Worker 会使用备用机制（查询端点）继续工作。
+A: 安全。这个端点只返回当前的 Replit URL，不包含任何敏感信息（Token、密码等），可以安全公开。
 
-### Q: 如何验证 API 更新成功？
+### Q: 如何验证 Worker 正在使用最新 URL？
 
-A: 查看 Bot 启动日志中的 "✅ Cloudflare Worker updated successfully!" 消息。也可以在 Cloudflare Dashboard → Worker → Settings → Variables 中查看 `REPLIT_URL` 变量。
+A: 访问你的 Worker URL，检查响应头中的 `X-Backend-URL`，它会显示当前使用的 Replit URL。
 
 ## 🎉 完成！
 
