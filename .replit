@@ -1,7 +1,8 @@
 run = "pnpm install && pnpm run build && pnpm start"
+modules = ["nodejs-20", "nix"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 
 [deployment]
 build = "pnpm install --frozen-lockfile && pnpm run build"
