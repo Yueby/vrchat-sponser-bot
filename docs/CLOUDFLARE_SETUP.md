@@ -36,7 +36,14 @@
 2. 或访问 Worker 页面，URL 中包含 Account ID
 3. 复制这个 ID（类似 `52181459d0b5379eab8c11a3cd8b0b84`）
 
-### 步骤 4：在 Replit 配置环境变量
+### 步骤 4：获取 Workers.dev 子域名
+
+1. 在 Cloudflare Worker 页面，查看 **域和路由** 标签页
+2. 找到 `workers.dev` 类型的路由
+3. URL 格式为：`{worker-name}.{subdomain}.workers.dev`
+4. 复制中间的 `subdomain` 部分（如截图中的 `yueby-sp`）
+
+### 步骤 5：在 Replit 配置环境变量
 
 在 Replit 的 **Secrets** 工具（左侧工具栏锁图标）中添加：
 
@@ -44,14 +51,16 @@
 CLOUDFLARE_API_TOKEN=你的API_Token
 CLOUDFLARE_ACCOUNT_ID=你的Account_ID  
 CLOUDFLARE_WORKER_NAME=vrchat-bot-proxy
+CLOUDFLARE_WORKER_SUBDOMAIN=你的subdomain（如 yueby-sp）
 ```
 
 **重要提示：**
 - 使用 Replit **Secrets** 工具，不要写在代码里
 - `CLOUDFLARE_WORKER_NAME` 是你在步骤1创建的 Worker 名称
+- `CLOUDFLARE_WORKER_SUBDOMAIN` 是你的 workers.dev 子域名（在 Worker 路由中查看）
 - **不要**把 Token 提交到 Git 仓库！
 
-### 步骤 5：测试自动更新
+### 步骤 6：测试自动更新
 
 1. 在 Replit 上**重启你的 Bot**（点击 Stop 然后 Run）
 
@@ -61,11 +70,11 @@ CLOUDFLARE_WORKER_NAME=vrchat-bot-proxy
    [INFO] 🌐 Updating Cloudflare Worker environment variable...
    [INFO]    Current Replit URL: https://xxxxx.proxy.replit.dev
    [INFO] ✅ Cloudflare Worker updated successfully!
-   [INFO]    Worker URL: https://vrchat-bot-proxy.xxxxx.workers.dev
+   [INFO]    Worker URL: https://vrchat-bot-proxy.your-subdomain.workers.dev
    [INFO] ✨ Access your bot via Cloudflare (permanent URL):
-   [INFO]    🌐 Worker URL: https://vrchat-bot-proxy.xxxxx.workers.dev
-   [INFO]    📊 API Endpoint: https://vrchat-bot-proxy.xxxxx.workers.dev/api/vrchat/sponsors/YOUR_GUILD_ID
-   [INFO]    ❤️ Health Check: https://vrchat-bot-proxy.xxxxx.workers.dev/health
+   [INFO]    🌐 Worker URL: https://vrchat-bot-proxy.your-subdomain.workers.dev
+   [INFO]    📊 API Endpoint: https://vrchat-bot-proxy.your-subdomain.workers.dev/api/vrchat/sponsors/YOUR_GUILD_ID
+   [INFO]    ❤️ Health Check: https://vrchat-bot-proxy.your-subdomain.workers.dev/health
    ```
 
 3. 访问你的 Worker URL 测试健康检查：

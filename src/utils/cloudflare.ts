@@ -19,6 +19,7 @@ export async function updateCloudflareWorker(): Promise<void> {
   const CLOUDFLARE_API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
   const CLOUDFLARE_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
   const CLOUDFLARE_WORKER_NAME = process.env.CLOUDFLARE_WORKER_NAME;
+  const CLOUDFLARE_WORKER_SUBDOMAIN = process.env.CLOUDFLARE_WORKER_SUBDOMAIN; // 如 yueby-sp
   
   // 获取当前 Replit URL
   const replitUrl = process.env.REPLIT_DEV_DOMAIN 
@@ -88,7 +89,15 @@ export async function updateCloudflareWorker(): Promise<void> {
     }
     
     logger.success('✅ Cloudflare Worker updated successfully!');
-    logger.info(`   Worker URL: https://${CLOUDFLARE_WORKER_NAME}.${CLOUDFLARE_ACCOUNT_ID}.workers.dev`);
+    
+    // 显示 Worker URL
+    if (CLOUDFLARE_WORKER_SUBDOMAIN) {
+      const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${CLOUDFLARE_WORKER_SUBDOMAIN}.workers.dev`;
+      logger.info(`   Worker URL: ${workerUrl}`);
+    } else {
+      logger.info(`   ℹ️ Check your Worker URL in Cloudflare Dashboard`);
+      logger.info(`   💡 Tip: Set CLOUDFLARE_WORKER_SUBDOMAIN env var to display URL here`);
+    }
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
