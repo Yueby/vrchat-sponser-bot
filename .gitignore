@@ -42,3 +42,6 @@ coverage/
 temp/
 tmp/
 cloudflare-worker/
+
+# Worker (separate repository)
+vrchat-bot-worker/
