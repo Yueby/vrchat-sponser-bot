@@ -144,7 +144,7 @@ export const connectDB = async () => {
       logger.error('MongoDB Connection Error:', JSON.stringify(error));
     }
     logger.error('Please check:');
-    logger.error('  1. MONGO_URI is correctly set in Replit Secrets');
+    logger.error('  1. MONGO_URI is correctly set in environment variables');
     logger.error('  2. MongoDB Atlas cluster is running');
     logger.error('  3. Network access is allowed (IP whitelist: 0.0.0.0/0)');
     process.exit(1);

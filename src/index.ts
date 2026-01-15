@@ -41,21 +41,8 @@ async function main(): Promise<void> {
     logger.success('Bot is ready!');
     logger.success('Server started successfully!'); // 平台可能检查这个
     
-    // Display URLs
-    if (process.env.REPLIT_DEV_DOMAIN) {
-      const runUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
-      logger.info(`Replit URL (Run mode - temporary): ${runUrl}`);
-      logger.info(`   Direct API: ${runUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-      logger.info(`   Direct Health: ${runUrl}/health`);
-      
-      // Auto-update Cloudflare Worker if configured
-      await updateCloudflareWorker();
-    } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-      const deployUrl = `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app`;
-      logger.info(`Replit URL (Deployed - permanent): ${deployUrl}`);
-      logger.info(`   API Endpoint: ${deployUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-      logger.info(`   Health Check: ${deployUrl}/health`);
-    }
+    // Auto-update Cloudflare Worker if configured
+    await updateCloudflareWorker();
   } catch (error) {
     logger.error('Error during startup:', error);
     throw error;
