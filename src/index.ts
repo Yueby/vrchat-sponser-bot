@@ -19,11 +19,9 @@ async function main(): Promise<void> {
     // 1. Start Web Server
     startServer();
     await new Promise(resolve => setTimeout(resolve, 1000));
-    logger.success('Web server initialized');
 
     // 2. Connect to Database
     await connectDB();
-    logger.success('Database connected');
 
     // 3. Login Bot and wait for ready
     await client.login(process.env.DISCORD_TOKEN!);
@@ -37,30 +35,26 @@ async function main(): Promise<void> {
       }
     });
     
-    logger.success('Discord login successful');
-    
     // 4. Perform Health Check
     await performStartupHealthCheck();
     
     logger.success('Bot is ready!');
     logger.success('Server started successfully!'); // 平台可能检查这个
     
-    // Display Replit URL if available
+    // Display URLs
     if (process.env.REPLIT_DEV_DOMAIN) {
-      // Run mode (temporary URL)
       const runUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
-      logger.info(`🌐 Replit URL (Run mode - temporary): ${runUrl}`);
-      logger.info(`📊 Direct API: ${runUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-      logger.info(`❤️ Direct Health: ${runUrl}/health`);
+      logger.info(`Replit URL (Run mode - temporary): ${runUrl}`);
+      logger.info(`   Direct API: ${runUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      logger.info(`   Direct Health: ${runUrl}/health`);
       
       // Auto-update Cloudflare Worker if configured
       await updateCloudflareWorker();
     } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
-      // Deploy mode (permanent URL)
       const deployUrl = `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app`;
-      logger.info(`🌐 Replit URL (Deployed - permanent): ${deployUrl}`);
-      logger.info(`📊 API Endpoint: ${deployUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-      logger.info(`❤️ Health Check: ${deployUrl}/health`);
+      logger.info(`Replit URL (Deployed - permanent): ${deployUrl}`);
+      logger.info(`   API Endpoint: ${deployUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      logger.info(`   Health Check: ${deployUrl}/health`);
     }
   } catch (error) {
     logger.error('Error during startup:', error);
@@ -73,26 +67,20 @@ async function main(): Promise<void> {
  * 验证所有关键服务正常运行
  */
 async function performStartupHealthCheck(): Promise<void> {
-  logger.info('Performing startup health check...');
-  
   // 检查数据库连接
   if (mongoose.connection.readyState !== 1) {
     throw new Error('Database not connected');
   }
-  logger.success('Database connection healthy');
   
   // 检查 Discord 连接
   if (!client.isReady()) {
     throw new Error('Discord client not ready');
   }
-  logger.success('Discord client healthy');
-  
-  logger.success('Health check passed');
 }
 
 // 🔧 全局错误处理：未捕获的异常
 process.on('uncaughtException', (error) => {
-  logger.error('❌ Uncaught Exception:', error);
+  logger.error('Uncaught Exception:', error);
   logger.error('Stack:', error.stack);
   logger.error('This should not happen! Please report this bug.');
   // 不立即退出，给 Bot 继续运行的机会
@@ -100,7 +88,7 @@ process.on('uncaughtException', (error) => {
 
 // 🔧 全局错误处理：未捕获的 Promise rejection
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('❌ Unhandled Promise Rejection at:', promise);
+  logger.error('Unhandled Promise Rejection at:', promise);
   logger.error('Reason:', reason);
   logger.error('This should not happen! Please report this bug.');
   // 不立即退出，给 Bot 继续运行的机会
@@ -108,16 +96,16 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // 🔧 监控进程退出
 process.on('exit', (code) => {
-  logger.warn(`⚠️ Process exiting with code: ${code}`);
+  logger.warn(`Process exiting with code: ${code}`);
 });
 
 // 🔧 其他信号
 process.on('SIGHUP', () => {
-  logger.warn('⚠️ Received SIGHUP signal');
+  logger.warn('Received SIGHUP signal');
 });
 
 process.on('SIGQUIT', () => {
-  logger.warn('⚠️ Received SIGQUIT signal');
+  logger.warn('Received SIGQUIT signal');
 });
 
 // 🔧 优雅关闭：统一处理函数

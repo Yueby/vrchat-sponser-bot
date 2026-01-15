@@ -49,8 +49,7 @@ export async function updateCloudflareWorker(): Promise<void> {
   }
   
   try {
-    logger.info('🌐 Updating Cloudflare Worker secret...');
-    logger.info(`   Current Replit URL: ${replitUrl}`);
+    logger.info(`Updating Cloudflare Worker: ${replitUrl}`);
     
     // 使用 Secrets API 更新 Worker secret
     const secretUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/secrets`;
@@ -79,21 +78,21 @@ export async function updateCloudflareWorker(): Promise<void> {
       throw new Error(`API error: ${JSON.stringify(result.errors)}`);
     }
     
-    logger.success('✅ Cloudflare Worker updated successfully!');
-    
     // 自动获取并显示 Worker URL
     const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
     if (subdomain) {
       const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
-      logger.info(`   🌐 Worker URL: ${workerUrl}`);
-      logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-      logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
+      logger.success(`Cloudflare Worker updated successfully!`);
+      logger.info(`   Worker URL: ${workerUrl}`);
+      logger.info(`   API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      logger.info(`   Health Check: ${workerUrl}/health`);
+    } else {
+      logger.success(`Cloudflare Worker updated successfully!`);
     }
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('❌ Failed to update Cloudflare Worker:', errorMessage);
-    logger.warn('   Bot will continue running');
-    logger.info(`   💡 You can manually set REPLIT_URL in Cloudflare Dashboard`);
+    logger.error(`Failed to update Cloudflare Worker: ${errorMessage}`);
+    logger.warn('Bot will continue running. You can manually set REPLIT_URL in Cloudflare Dashboard');
   }
 }
