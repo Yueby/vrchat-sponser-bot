@@ -41,7 +41,8 @@ export async function updateCloudflareWorker(): Promise<void> {
     });
     
     if (!getResponse.ok) {
-      throw new Error(`Failed to get worker settings: ${getResponse.statusText}`);
+      const errorText = await getResponse.text();
+      throw new Error(`Failed to get worker settings (${getResponse.status}): ${errorText}`);
     }
     
     const currentSettings = await getResponse.json() as any;
@@ -84,7 +85,9 @@ export async function updateCloudflareWorker(): Promise<void> {
     logger.info(`   Worker URL: https://${CLOUDFLARE_WORKER_NAME}.${CLOUDFLARE_ACCOUNT_ID}.workers.dev`);
     
   } catch (error) {
-    logger.error('❌ Failed to update Cloudflare Worker:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('❌ Failed to update Cloudflare Worker:', errorMessage);
     logger.warn('   Bot will continue running, but Cloudflare proxy may have old URL');
+    logger.info('   💡 Tip: Check CLOUDFLARE_SETUP.md for configuration guide');
   }
 }
