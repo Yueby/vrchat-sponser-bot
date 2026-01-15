@@ -1,15 +1,11 @@
-# 点击 Run 按钮时执行的命令
 run = "pnpm install && pnpm run build && pnpm start"
 
 [nix]
 channel = "stable-24_05"
 
 [deployment]
-# 部署构建步骤
 build = "pnpm install --frozen-lockfile && pnpm run build"
-# 部署运行命令
 run = ["pnpm", "start"]
-deploymentTarget = "cloudrun"
 
 [env]
 NODE_ENV = "production"
