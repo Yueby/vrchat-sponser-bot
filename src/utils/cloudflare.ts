@@ -54,75 +54,27 @@ export async function updateCloudflareWorker(): Promise<void> {
   // 保存到内存（备用方案）
   currentReplitUrl = replitUrl;
   
-  // 检查是否配置了 Cloudflare 自动更新
+  // 检查是否配置了 Cloudflare
   if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_WORKER_NAME) {
-    logger.info('ℹ️ Cloudflare auto-update not configured');
+    logger.info('ℹ️ Cloudflare integration not configured');
     logger.info(`   Current Replit URL: ${replitUrl}`);
-    logger.info(`   Worker can manually fetch from: ${replitUrl}/__replit_url`);
+    logger.info(`   Configure CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_WORKER_NAME for Worker integration`);
     return;
   }
   
-  try {
-    logger.info('🌐 Updating Cloudflare Worker environment variable...');
-    logger.info(`   Current Replit URL: ${replitUrl}`);
-    
-    // 使用 Cloudflare Workers Secret API（类似 wrangler secret put）
-    // 这是最直接的方式来设置环境变量
-    const secretUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/secrets`;
-    
-    // PUT 请求来创建/更新 secret
-    const updateResponse = await fetch(secretUrl, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: 'REPLIT_URL',
-        text: replitUrl,
-        type: 'secret_text'
-      })
-    });
-    
-    // 获取响应文本
-    const responseText = await updateResponse.text();
-    
-    // 检查 HTTP 状态
-    if (!updateResponse.ok) {
-      logger.debug(`API Response (${updateResponse.status}): ${responseText}`);
-      throw new Error(`HTTP ${updateResponse.status}: ${responseText || 'Unknown error'}`);
-    }
-    
-    // 解析 JSON
-    let result: any;
-    try {
-      result = responseText ? JSON.parse(responseText) : { success: true };
-    } catch (parseError) {
-      logger.debug(`Failed to parse response: ${responseText}`);
-      throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
-    }
-    
-    // 检查 API 成功状态
-    if (result.success === false) {
-      const errors = result.errors || [];
-      throw new Error(`API returned error: ${JSON.stringify(errors)}`);
-    }
-    
-    logger.success('✅ Cloudflare Worker updated successfully!');
-    
-    // 自动获取并显示 Worker URL
-    const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
-    if (subdomain) {
-      const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
-      logger.info(`   Worker URL: ${workerUrl}`);
-    } else {
-      logger.info(`   ℹ️ Check your Worker URL in Cloudflare Dashboard`);
-    }
-    
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('❌ Failed to update Cloudflare Worker:', errorMessage);
-    logger.warn('   Bot will continue running, but Cloudflare proxy may have old URL');
-    logger.info(`   💡 Worker can still fetch URL from: ${replitUrl}/__replit_url`);
+  logger.info('🌐 Configuring Cloudflare Worker access...');
+  logger.info(`   Current Replit URL: ${replitUrl}`);
+  
+  // 自动获取并显示 Worker URL
+  const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
+  if (subdomain) {
+    const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
+    logger.success('✅ Worker URL detected!');
+    logger.info(`   🌐 Worker URL: ${workerUrl}`);
+    logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+    logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
   }
+  
+  logger.info(`💡 Worker will automatically fetch latest URL from: ${replitUrl}/__replit_url`);
+  logger.info('   ℹ️ This is the recommended approach for GitHub-deployed Workers');
 }
