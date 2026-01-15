@@ -50,13 +50,13 @@ async function performStartupHealthCheck(): Promise<void> {
   if (mongoose.connection.readyState !== 1) {
     throw new Error('Database not connected');
   }
-  logger.success('✓ Database connection healthy');
+  logger.success('Database connection healthy');
   
   // 检查 Discord 连接
   if (!client.isReady()) {
     throw new Error('Discord client not ready');
   }
-  logger.success('✓ Discord client healthy');
+  logger.success('Discord client healthy');
   
   logger.success('Health check passed');
 }

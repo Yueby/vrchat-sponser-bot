@@ -46,7 +46,7 @@ export const client: Client = new Client({
 });
 
 // Bot 启动时自动同步所有服务器
-client.once('ready', async () => {
+client.once('clientReady', async () => {
   logger.bot(`Bot logged in as ${client.user?.tag}`);
   logger.network(`Connected to ${client.guilds.cache.size} servers`);
       

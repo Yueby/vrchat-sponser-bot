@@ -1,12 +1,20 @@
 run = "pnpm install && pnpm run build && pnpm start"
-modules = ["nodejs-20", "nix"]
 
 [nix]
-channel = "stable-25_05"
+channel = "stable-24_05"
 
 [deployment]
 build = "NODE_ENV=development pnpm install --frozen-lockfile && pnpm run build"
 run = ["sh", "-c", "NODE_ENV=production pnpm start"]
 
-[env]
+[userenv.shared]
+PORT = "3000"
+LOG_LEVEL = "INFO"
 LOG_TIMESTAMP = "false"
+
+[agent]
+expertMode = true
+
+[[ports]]
+localPort = 3000
+externalPort = 80
