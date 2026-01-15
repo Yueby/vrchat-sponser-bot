@@ -1,0 +1,11 @@
+run = "pnpm install && pnpm run build && pnpm start"
+
+[nix]
+channel = "stable-23_11"
+
+[deployment]
+run = ["sh", "-c", "pnpm install && pnpm run build && pnpm start"]
+deploymentTarget = "cloudrun"
+
+[env]
+NODE_ENV = "production"
