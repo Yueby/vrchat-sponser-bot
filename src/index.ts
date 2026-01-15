@@ -43,6 +43,22 @@ async function main(): Promise<void> {
     
     logger.success('Bot is ready!');
     logger.success('Server started successfully!'); // 平台可能检查这个
+    
+    // Display Replit URL if available
+    if (process.env.REPLIT_DEV_DOMAIN) {
+      // Run mode (temporary URL)
+      const runUrl = `https://${process.env.REPLIT_DEV_DOMAIN}`;
+      logger.info(`🌐 Replit URL (Run mode - temporary): ${runUrl}`);
+      logger.info(`📊 API Endpoint: ${runUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      logger.info(`❤️ Health Check: ${runUrl}/health`);
+      logger.warn(`⚠️ This is a temporary URL. For a permanent URL, use Deploy.`);
+    } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+      // Deploy mode (permanent URL)
+      const deployUrl = `https://${process.env.REPL_SLUG}-${process.env.REPL_OWNER}.replit.app`;
+      logger.info(`🌐 Replit URL (Deployed - permanent): ${deployUrl}`);
+      logger.info(`📊 API Endpoint: ${deployUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      logger.info(`❤️ Health Check: ${deployUrl}/health`);
+    }
   } catch (error) {
     logger.error('Error during startup:', error);
     throw error;
