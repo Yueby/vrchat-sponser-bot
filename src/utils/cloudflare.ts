@@ -58,45 +58,60 @@ export async function updateCloudflareWorker(): Promise<void> {
   if (!CLOUDFLARE_API_TOKEN || !CLOUDFLARE_ACCOUNT_ID || !CLOUDFLARE_WORKER_NAME) {
     logger.info('ℹ️ Cloudflare integration not configured');
     logger.info(`   Current Replit URL: ${replitUrl}`);
-    logger.info(`   Configure CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_WORKER_NAME for Worker integration`);
+    logger.info(`   Configure CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, and CLOUDFLARE_WORKER_NAME for automatic updates`);
     return;
   }
   
-  logger.info('🌐 Configuring Cloudflare Worker access...');
-  logger.info(`   Current Replit URL: ${replitUrl}`);
-  
-  // 自动获取并显示 Worker URL
-  const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
-  let workerUrl: string | null = null;
-  
-  if (subdomain) {
-    workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
-    logger.success('✅ Worker URL detected!');
-    logger.info(`   🌐 Worker URL: ${workerUrl}`);
-  }
-  
-  // 通知 Worker 更新 URL
-  if (workerUrl) {
-    try {
-      const updateUrl = `${workerUrl}/__update_url?url=${encodeURIComponent(replitUrl)}`;
-      const response = await fetch(updateUrl, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' }
-      });
-      
-      if (response.ok) {
-        logger.success('✅ Worker URL updated successfully!');
-        logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-        logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
-      } else {
-        logger.warn(`⚠️ Failed to update Worker: ${response.status}`);
-        logger.info(`   💡 Worker will query from: ${replitUrl}/__replit_url`);
-      }
-    } catch (error) {
-      logger.warn('⚠️ Could not reach Worker (may not be deployed yet)');
-      logger.info(`   💡 Worker will query from: ${replitUrl}/__replit_url`);
+  try {
+    logger.info('🌐 Updating Cloudflare Worker environment variable...');
+    logger.info(`   Current Replit URL: ${replitUrl}`);
+    
+    // 使用 Cloudflare Workers Script API 更新环境变量
+    const apiUrl = `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${CLOUDFLARE_WORKER_NAME}/settings`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        bindings: [
+          {
+            type: 'plain_text',
+            name: 'REPLIT_URL',
+            text: replitUrl
+          }
+        ]
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
-  } else {
-    logger.info(`💡 Worker will automatically fetch latest URL from: ${replitUrl}/__replit_url`);
+    
+    const result = await response.json() as any;
+    
+    if (!result.success) {
+      throw new Error(`API error: ${JSON.stringify(result.errors)}`);
+    }
+    
+    logger.success('✅ Cloudflare Worker updated successfully!');
+    
+    // 自动获取并显示 Worker URL
+    const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
+    if (subdomain) {
+      const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
+      logger.info(`   🌐 Worker URL: ${workerUrl}`);
+      logger.info(`   📊 API Endpoint: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      logger.info(`   ❤️ Health Check: ${workerUrl}/health`);
+    }
+    
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('❌ Failed to update Cloudflare Worker:', errorMessage);
+    logger.warn('   Bot will continue running');
+    logger.info(`   💡 You can manually set REPLIT_URL in Cloudflare Dashboard`);
   }
 }
