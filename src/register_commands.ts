@@ -1,4 +1,4 @@
-import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { PermissionFlagsBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
 import dotenv from 'dotenv';
 import { validateEnv } from './utils/env';
 import { logger } from './utils/logger';
@@ -23,6 +23,7 @@ const commands = [
   new SlashCommandBuilder()
     .setName('server')
     .setDescription('Server management commands')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand(subcommand =>
       subcommand
         .setName('stats')
@@ -43,6 +44,7 @@ const commands = [
   new SlashCommandBuilder()
     .setName('admin')
     .setDescription('Administrator commands')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand(subcommand =>
       subcommand
         .setName('sync')
@@ -107,6 +109,7 @@ const commands = [
   new SlashCommandBuilder()
     .setName('external')
     .setDescription('Manage external users who cannot join the server (Admin only)')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand(subcommand =>
       subcommand
         .setName('add')
