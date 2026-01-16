@@ -1,4 +1,4 @@
-// /admin sync 命令处理
+// /server sync 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
@@ -7,7 +7,7 @@ import { bulkUpsertDiscordUsers } from '../../utils/database';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 
-export async function handleAdminSync(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function handleServerSync(interaction: ChatInputCommandInteraction): Promise<void> {
   const guildId = requireGuild(interaction);
   if (!guildId) return;
 
@@ -49,7 +49,7 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
 
     const embed = new EmbedBuilder()
       .setAuthor({
-        name: 'Admin Action: Manual Sync',
+        name: 'Server Action: Manual Sync',
         iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
       })
       .setTitle('Database Sync Complete')

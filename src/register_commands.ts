@@ -79,18 +79,18 @@ const commands = [
             .setDescription('Enable or disable API access')
             .setRequired(true)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('sync')
+        .setDescription('Manually sync members with managed roles to database')
     ),
 
-  // /admin - 管理员命令（包含 sync、unbind、memory 子命令）
+  // /admin - 管理员命令（包含 unbind、memory 子命令）
   new SlashCommandBuilder()
     .setName('admin')
     .setDescription('Administrator commands')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('sync')
-        .setDescription('Manually sync all server members to database')
-    )
     .addSubcommand(subcommand =>
       subcommand
         .setName('unbind')

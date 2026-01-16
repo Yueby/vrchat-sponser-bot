@@ -8,7 +8,6 @@ import {
 } from '../commands/admin/external';
 import { handleAdminMemory } from '../commands/admin/memory';
 import { handleAdminSearch } from '../commands/admin/search';
-import { handleAdminSync } from '../commands/admin/sync';
 import { handleAdminUnbind } from '../commands/admin/unbind';
 import { handleAdminUnbound } from '../commands/admin/unbound';
 import { handleChangeName } from '../commands/changename';
@@ -17,6 +16,7 @@ import { handleServerApi } from '../commands/server/api';
 import { handleServerNotify } from '../commands/server/notify';
 import { handleServerRoles } from '../commands/server/roles';
 import { handleServerStats } from '../commands/server/stats';
+import { handleServerSync } from '../commands/server/sync';
 import { handleWhoAmI } from '../commands/whoami';
 import { logger } from '../utils/logger';
 
@@ -44,14 +44,14 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
           await handleServerStats(interaction);
         } else if (serverSubcommand === 'api') {
           await handleServerApi(interaction);
+        } else if (serverSubcommand === 'sync') {
+          await handleServerSync(interaction);
         }
         break;
 
       case 'admin':
         const adminSubcommand = interaction.options.getSubcommand();
-        if (adminSubcommand === 'sync') {
-          await handleAdminSync(interaction);
-        } else if (adminSubcommand === 'unbind') {
+        if (adminSubcommand === 'unbind') {
           await handleAdminUnbind(interaction);
         } else if (adminSubcommand === 'unbound') {
           await handleAdminUnbound(interaction);
