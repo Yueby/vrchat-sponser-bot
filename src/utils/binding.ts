@@ -54,8 +54,16 @@ export async function getMembersWithRoles(
   roleIds: string[]
 ): Promise<GuildMember[]> {
   try {
+    if (!roleIds || roleIds.length === 0) {
+      logger.warn('getMembersWithRoles called with empty roleIds');
+      return [];
+    }
+
     // 获取所有成员
+    logger.info(`Fetching members for guild ${guild.name}, roleIds: ${roleIds.join(', ')}`);
     await guild.members.fetch();
+    
+    logger.info(`Total members in cache: ${guild.members.cache.size}`);
     
     // 过滤出拥有指定角色的成员（排除 Bot）
     const members = guild.members.cache.filter(member => {
@@ -63,7 +71,10 @@ export async function getMembersWithRoles(
       return member.roles.cache.some(role => roleIds.includes(role.id));
     });
 
-    return Array.from(members.values());
+    const memberArray = Array.from(members.values());
+    logger.info(`Found ${memberArray.length} members with specified roles`);
+    
+    return memberArray;
   } catch (error) {
     logger.error('Error fetching members with roles:', error);
     return [];
@@ -79,15 +90,26 @@ export async function calculateBindingProgress(
   guildId: string
 ): Promise<{ bound: number; total: number; percentage: number }> {
   try {
+    logger.info(`Calculating binding progress for guild ${guildId}`);
+    
     // 获取服务器配置
     const guild = await GuildModel.findOne({ guildId });
-    if (!guild || guild.managedRoleIds.length === 0) {
+    if (!guild) {
+      logger.warn(`Guild ${guildId} not found in database`);
       return { bound: 0, total: 0, percentage: 0 };
     }
+    
+    if (guild.managedRoleIds.length === 0) {
+      logger.info(`Guild ${guildId} has no managed roles`);
+      return { bound: 0, total: 0, percentage: 0 };
+    }
+
+    logger.info(`Guild ${guildId} has ${guild.managedRoleIds.length} managed roles`);
 
     // 获取 Discord Guild 对象
     const discordGuild = client.guilds.cache.get(guildId);
     if (!discordGuild) {
+      logger.error(`Discord guild ${guildId} not found in cache`);
       return { bound: 0, total: 0, percentage: 0 };
     }
 
@@ -95,7 +117,10 @@ export async function calculateBindingProgress(
     const members = await getMembersWithRoles(discordGuild, guild.managedRoleIds);
     const total = members.length;
 
+    logger.info(`Total members with managed roles: ${total}`);
+
     if (total === 0) {
+      logger.warn(`No members found with managed roles in guild ${guildId}`);
       return { bound: 0, total: 0, percentage: 0 };
     }
 
@@ -105,6 +130,8 @@ export async function calculateBindingProgress(
       guildId,
       discordUserId: { $in: memberIds }
     });
+
+    logger.info(`Bound members: ${boundCount}/${total}`);
 
     const percentage = Math.round((boundCount / total) * 100);
 

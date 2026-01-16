@@ -175,43 +175,47 @@ async function handleListRoles(
   interaction: ChatInputCommandInteraction,
   guild: InstanceType<typeof Guild>
 ): Promise<void> {
-  const progress = await calculateBindingProgress(interaction.guildId!);
+  try {
+    const progress = await calculateBindingProgress(interaction.guildId!);
 
-  const embed = new EmbedBuilder()
-    .setAuthor({
-      name: interaction.guild!.name,
-      iconURL: interaction.guild!.iconURL() || undefined
+    const embed = new EmbedBuilder()
+      .setAuthor({
+        name: interaction.guild!.name,
+        iconURL: interaction.guild!.iconURL() || undefined
+      })
+      .setTitle('Managed Roles Configuration')
+      .setColor(EMBED_COLORS.INFO)
+      .setDescription(
+        guild.managedRoleIds.length === 0
+          ? 'No managed roles configured. Use /server roles add to add roles to track.'
+          : `Total: ${guild.managedRoleIds.length} role${guild.managedRoleIds.length !== 1 ? 's' : ''}`
+      );
+
+    if (guild.managedRoleIds.length > 0) {
+      embed.addFields(
+        {
+          name: 'Roles List',
+          value: formatManagedRoles(guild, interaction.guild!),
+          inline: false
+        },
+        {
+          name: 'Binding Progress',
+          value: `${progress.bound}/${progress.total} (${progress.percentage}%)`,
+          inline: false
+        }
+      );
+    }
+
+    embed.setFooter({
+      text: `Requested by ${interaction.user.username}`,
+      iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
     })
-    .setTitle('Managed Roles Configuration')
-    .setColor(EMBED_COLORS.INFO)
-    .setDescription(
-      guild.managedRoleIds.length === 0
-        ? 'No managed roles configured. Use /server roles add to add roles to track.'
-        : `Total: ${guild.managedRoleIds.length} role${guild.managedRoleIds.length !== 1 ? 's' : ''}`
-    );
+    .setTimestamp();
 
-  if (guild.managedRoleIds.length > 0) {
-    embed.addFields(
-      {
-        name: 'Roles List',
-        value: formatManagedRoles(guild, interaction.guild!),
-        inline: false
-      },
-      {
-        name: 'Binding Progress',
-        value: `${progress.bound}/${progress.total} (${progress.percentage}%)`,
-        inline: false
-      }
-    );
+    await interaction.editReply({ embeds: [embed] });
+  } catch (error) {
+    await handleCommandError(interaction, error);
   }
-
-  embed.setFooter({
-    text: `Requested by ${interaction.user.username}`,
-    iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
-  })
-  .setTimestamp();
-
-  await interaction.editReply({ embeds: [embed] });
 }
 
 /**
