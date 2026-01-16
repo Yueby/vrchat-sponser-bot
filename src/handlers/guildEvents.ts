@@ -3,6 +3,7 @@ import { Guild as DiscordGuild } from 'discord.js';
 import DiscordUser from '../models/DiscordUser';
 import Guild from '../models/Guild';
 import VRChatBinding from '../models/VRChatBinding';
+import { getMembersWithRoles } from '../utils/binding';
 import { bulkUpsertDiscordUsers } from '../utils/database';
 import { logger } from '../utils/logger';
 
@@ -56,6 +57,44 @@ export async function handleGuildCreate(guild: DiscordGuild): Promise<void> {
     logger.success(`Guild setup complete: ${guild.name} (members will sync on-demand)`);
   } catch (error) {
     logger.error(`Error setting up new guild ${guild.name}:`, error);
+  }
+}
+
+/**
+ * 同步指定角色的成员数据
+ * @param guild Discord Guild 对象
+ * @param roleIds 角色 ID 列表
+ * @returns 同步的成员数量
+ */
+export async function syncRoleMembers(
+  guild: DiscordGuild,
+  roleIds: string[]
+): Promise<number> {
+  try {
+    logger.sync(`Syncing members with roles in ${guild.name}...`);
+    
+    // 获取拥有指定角色的成员
+    const members = await getMembersWithRoles(guild, roleIds);
+    
+    if (members.length === 0) {
+      logger.info('No members found with specified roles');
+      return 0;
+    }
+
+    // 批量更新 DiscordUser
+    await bulkUpsertDiscordUsers(members, guild.id);
+    
+    // 更新服务器的最后同步时间
+    await Guild.updateOne(
+      { guildId: guild.id },
+      { lastSyncAt: new Date() }
+    );
+
+    logger.success(`Synced ${members.length} members with specified roles`);
+    return members.length;
+  } catch (error) {
+    logger.error('Error syncing role members:', error);
+    return 0;
   }
 }
 

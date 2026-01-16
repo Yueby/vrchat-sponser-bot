@@ -3,8 +3,10 @@ import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags, PermissionFlag
 import { client } from '../../bot';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import DiscordUser from '../../models/DiscordUser';
+import ExternalUser from '../../models/ExternalUser';
 import Guild from '../../models/Guild';
 import VRChatBinding from '../../models/VRChatBinding';
+import { calculateBindingProgress } from '../../utils/binding';
 import { handleCommandError, requireGuild } from '../../utils/errors';
 
 export async function handleServerStats(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -29,13 +31,32 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
       return;
     }
 
+    // 获取管理的角色名称
+    const hasManagedRoles = guild.managedRoleIds?.length > 0;
+    const managedRoleNames = hasManagedRoles
+      ? guild.managedRoleIds.map(id => {
+          const role = guildInfo.roles.cache.get(id);
+          return role ? role.name : `Unknown Role (${id})`;
+        }).join(', ')
+      : 'Not configured';
+
+    // 计算绑定进度
+    const progress = hasManagedRoles
+      ? await calculateBindingProgress(guildId)
+      : { bound: 0, total: 0, percentage: 0 };
+
     // 实时计算统计数据
     const memberCount = await DiscordUser.countDocuments({ guildId });
     const bindingCount = await VRChatBinding.countDocuments({ guildId });
-    const bindingRate = memberCount > 0 ? ((bindingCount / memberCount) * 100).toFixed(1) : '0';
+    const externalUserCount = await ExternalUser.countDocuments({ guildId });
 
     // 计算 Bot 运行时间
     const botJoinedDays = Math.floor((Date.now() - guild.joinedAt.getTime()) / (1000 * 60 * 60 * 24));
+
+    // 获取通知接收者
+    const notifyUserText = guild.notifyUserId 
+      ? `<@${guild.notifyUserId}>`
+      : 'Not configured';
 
     const embed = new EmbedBuilder()
       .setAuthor({ 
@@ -51,17 +72,46 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
       .setThumbnail(guildInfo.iconURL({ size: AVATAR_SIZES.LARGE }) || null)
       .addFields(
         { 
-          name: 'Database Statistics', 
-          value: 
-            `Members: ${memberCount}\n` +
-            `Bindings: ${bindingCount}\n` +
-            `Bind Rate: ${bindingRate}%`,
+          name: 'Managed Roles', 
+          value: managedRoleNames,
+          inline: false 
+        },
+        { 
+          name: 'Binding Progress', 
+          value: hasManagedRoles
+            ? `${progress.bound}/${progress.total} (${progress.percentage}%)`
+            : 'No roles configured',
+          inline: true 
+        },
+        { 
+          name: 'Total Members', 
+          value: `${memberCount}`,
+          inline: true 
+        },
+        { 
+          name: '\u200b', 
+          value: '\u200b',
+          inline: true 
+        },
+        { 
+          name: 'Bound Users', 
+          value: `${bindingCount}`,
+          inline: true 
+        },
+        { 
+          name: 'External Users', 
+          value: `${externalUserCount}`,
           inline: true 
         },
         { 
           name: 'API Status', 
           value: guild.apiEnabled ? 'Enabled' : 'Disabled',
           inline: true 
+        },
+        { 
+          name: 'Notification Recipient', 
+          value: notifyUserText,
+          inline: false 
         },
         { 
           name: 'Activity Timeline', 

@@ -5,10 +5,12 @@
 ## ✨ 核心特性
 
 - 🏢 **多服务器支持**：每个 Discord 服务器独立数据，完全隔离
+- 🎯 **基于角色管理**：服主配置要管理的角色，Bot 只追踪这些角色的成员
 - 🚀 **智能缓存**：按需加载成员数据，优化内存占用
 - 🌐 **RESTful API**：按服务器获取赞助者列表（VRChat DataDictionary 格式）
 - 👥 **外部用户支持**：为无法加入 Discord 服务器的用户提供虚拟绑定
 - 📜 **历史追踪**：自动记录 VRChat 名称变更历史
+- 🔔 **通知系统**：实时通知管理员用户绑定情况
 - 🔐 **访问控制**：服务器所有者可启用/禁用 API
 - ⚡ **限流保护**：180 次/分钟
 
@@ -17,19 +19,27 @@
 ## 🎮 命令列表
 
 ### 用户命令
-- `/changename <name>` - 绑定或更新 VRChat 名字
+- `/changename <name>` - 绑定或更新 VRChat 名字（需要拥有配置的角色）
 - `/whoami` - 查看自己的绑定状态和详细信息
 - `/history` - 查看 VRChat 名称变更历史记录
 
+### 服务器配置命令（所有者）
+- `/server roles add <role>` - 添加要管理的角色
+- `/server roles remove <role>` - 移除管理的角色
+- `/server roles list` - 查看当前管理的角色列表
+- `/server roles clear` - 清除所有角色配置
+- `/server notify <user>` - 设置接收 changename 通知的用户
+- `/server stats` - 查看服务器统计信息、角色配置和绑定进度
+- `/server api <enabled>` - 启用/禁用 API 访问
+
 ### 管理员命令
-- `/server stats` - 查看服务器统计信息和 API 状态
-- `/server api <enabled>` - 启用/禁用 API 访问（仅所有者）
-- `/admin sync` - 手动同步所有成员数据
+- `/admin unbound` - 查看未绑定 VRChat 名字的成员列表
+- `/admin sync` - 手动同步指定角色成员数据
 - `/admin unbind <user>` - 强制解绑指定用户
 - `/admin memory [action]` - 查看或管理 Bot 内存使用情况
 - `/admin search <type> <value>` - 搜索用户
 
-### 外部用户管理
+### 外部用户管理（管理员）
 - `/external add` - 添加外部用户
 - `/external update` - 更新外部用户信息
 - `/external remove` - 删除外部用户
@@ -121,6 +131,29 @@ pnpm run register
 pnpm start
 ```
 
+### 4. 首次配置
+
+Bot 启动后，服务器所有者需要配置要管理的角色：
+
+```
+/server roles add @VIP
+/server roles add @赞助者
+```
+
+Bot 会立即同步这些角色的成员数据。
+
+**可选配置**：
+
+```
+# 设置通知接收者
+/server notify @管理员
+
+# 查看当前配置
+/server stats
+```
+
+**重要**：只有拥有配置角色的成员才能使用 `/changename` 命令绑定 VRChat 名字。
+
 ---
 
 ## 📦 部署
@@ -209,12 +242,49 @@ Bot 启动时会自动检测平台并更新 Worker 的 `BACKEND_URL`。
 
 ---
 
+## 🔧 技术细节
+
+### Discord Role 存储方式
+
+- 使用 **role ID** 存储（非 role 名称）
+- Role ID 是永久不变的 Snowflake ID
+- 即使修改 role 名称，ID 不会改变，功能不受影响
+- 显示时实时获取最新的 role 名称
+
+### 角色管理机制
+
+- **配置时同步**：添加角色后立即同步该角色的成员
+- **实时监听**：成员获得/失去配置角色时自动同步
+- **手动同步**：管理员可使用 `/admin sync` 命令强制同步
+- **权限检查**：`/changename` 命令会检查用户是否拥有配置的角色
+
+### 绑定进度计算
+
+- 总人数 = 拥有管理角色的成员数（排除 Bot）
+- 已绑定 = 这些成员中已使用 `/changename` 的人数
+- 进度 = 已绑定/总人数
+
+### 权限控制
+
+- **服务器所有者**：配置角色、通知、API 访问
+- **管理员**：查看未绑定人员、手动同步、解绑用户
+- **拥有配置角色的成员**：使用 `/changename` 绑定名字
+- **其他成员**：无法使用 `/changename`
+
+---
+
 ## 🐛 常见问题
 
 **Q: Bot 无法同步成员？**  
 A: 确保启用了 `SERVER MEMBERS INTENT`
 
-**Q: API 返回 403？**  
+**Q: 用户无法使用 /changename 命令？**  
+A: 确保服主已使用 `/server roles add` 配置了管理角色，且用户拥有这些角色
+
+**Q: API 返回 400 错误？**  
+A: 服务器未配置管理角色。使用 `/server roles add` 添加要管理的角色
+
+**Q: API 返回 403 错误？**  
 A: 使用 `/server api true` 命令启用 API 访问
 
 **Q: 如何添加无法加入服务器的用户？**  
@@ -222,6 +292,9 @@ A: 使用 `/external add` 命令添加外部用户
 
 **Q: 如何监控 Bot 的内存使用？**  
 A: 使用 `/admin memory status` 查看内存状态
+
+**Q: 如何查看哪些成员未绑定？**  
+A: 使用 `/admin unbound` 命令查看未绑定成员列表
 
 ---
 

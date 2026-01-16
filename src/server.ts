@@ -73,6 +73,11 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     if (!guild) {
       return res.status(404).json({ error: 'Guild not found' });
     }
+
+    // 检查是否配置了管理角色
+    if (!guild.managedRoleIds || guild.managedRoleIds.length === 0) {
+      return res.status(400).json({ error: 'No managed roles configured for this guild' });
+    }
     
     if (!guild.apiEnabled) {
       return res.status(403).json({ error: 'API access disabled for this guild' });
@@ -95,9 +100,15 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       'userId roles isBooster joinedAt'
     ).lean();
     
+    // 过滤：只保留拥有管理角色的用户
+    const managedRoleIds = new Set(guild.managedRoleIds);
+    const filteredDiscordUsers = discordUsers.filter(user =>
+      user.roles.some(roleId => managedRoleIds.has(roleId))
+    );
+    
     // 创建查找映射
     const discordUserMap = new Map(
-      discordUsers.map(user => [user.userId, user])
+      filteredDiscordUsers.map(user => [user.userId, user])
     );
     
     // 获取 Discord Guild 对象（用于实时查询）

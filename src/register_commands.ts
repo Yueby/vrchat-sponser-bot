@@ -19,11 +19,52 @@ const commands = [
         .setRequired(true)
     ),
 
-  // /server - 服务器管理命令（包含 stats 和 api 子命令）
+  // /server - 服务器管理命令
   new SlashCommandBuilder()
     .setName('server')
     .setDescription('Server management commands')
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addSubcommandGroup(group =>
+      group
+        .setName('roles')
+        .setDescription('Manage tracked roles (Owner only)')
+        .addSubcommand(sub =>
+          sub
+            .setName('add')
+            .setDescription('Add a role to track')
+            .addRoleOption(opt => 
+              opt.setName('role')
+                .setDescription('Role to track')
+                .setRequired(true)
+            )
+        )
+        .addSubcommand(sub =>
+          sub
+            .setName('remove')
+            .setDescription('Remove a tracked role')
+            .addRoleOption(opt => 
+              opt.setName('role')
+                .setDescription('Role to remove')
+                .setRequired(true)
+            )
+        )
+        .addSubcommand(sub =>
+          sub.setName('list').setDescription('View current tracked roles')
+        )
+        .addSubcommand(sub =>
+          sub.setName('clear').setDescription('Clear all tracked roles')
+        )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('notify')
+        .setDescription('Configure changename notification target (Owner only)')
+        .addUserOption(option =>
+          option.setName('user')
+            .setDescription('User to receive notifications (leave empty to clear)')
+            .setRequired(false)
+        )
+    )
     .addSubcommand(subcommand =>
       subcommand
         .setName('stats')
@@ -93,6 +134,11 @@ const commands = [
             .setDescription('Search value (partial match for VRChat/Role, exact for Discord ID)')
             .setRequired(true)
         )
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('unbound')
+        .setDescription('View list of members who haven\'t bound VRChat names')
     ),
 
   // /whoami - 查看自己的信息

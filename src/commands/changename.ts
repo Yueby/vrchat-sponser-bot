@@ -1,8 +1,11 @@
 // /changename 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
+import { client } from '../bot';
 import { AVATAR_SIZES, COOLDOWNS, EMBED_COLORS } from '../config/constants';
 import DiscordUser from '../models/DiscordUser';
+import Guild from '../models/Guild';
 import VRChatBinding from '../models/VRChatBinding';
+import { calculateBindingProgress, hasManagedRole } from '../utils/binding';
 import { getMemberRoleIds, getMemberRoleNames, isMemberBooster } from '../utils/discord';
 import { handleCommandError, requireGuild } from '../utils/errors';
 import { logger } from '../utils/logger';
@@ -34,6 +37,27 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
   if (!validation.valid) {
     await interaction.reply({
       content: `🔴 ${validation.error}`,
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
+
+  // 检查服务器是否配置了管理角色
+  const guild = await Guild.findOne({ guildId });
+  if (!guild || guild.managedRoleIds.length === 0) {
+    await interaction.reply({
+      content: '🔴 No managed roles configured. Please contact the server owner to configure roles using /server roles.',
+      flags: MessageFlags.Ephemeral
+    });
+    return;
+  }
+
+  // 检查用户是否拥有管理的角色
+  const hasRole = await hasManagedRole(guildId, userId);
+  if (!hasRole) {
+    await interaction.reply({
+      content: '🔴 You do not have permission to use this command. Required roles:\n' +
+        guild.managedRoleIds.map(id => `<@&${id}>`).join(', '),
       flags: MessageFlags.Ephemeral
     });
     return;
@@ -154,6 +178,49 @@ export async function handleChangeName(interaction: ChatInputCommandInteraction)
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
+    
+    // 发送通知（如果配置了）
+    if (guild?.notifyUserId) {
+      try {
+        // 计算绑定进度
+        const progress = await calculateBindingProgress(guildId);
+        
+        // 获取通知目标用户
+        const notifyUser = await client.users.fetch(guild.notifyUserId).catch(() => null);
+        
+        if (notifyUser) {
+          // 构建通知 Embed
+          const notifyEmbed = new EmbedBuilder()
+            .setTitle(isNewBinding ? 'New VRChat Binding' : 'VRChat Name Updated')
+            .setDescription(`${member.displayName} (@${username})`)
+            .setColor(EMBED_COLORS.SUCCESS)
+            .setThumbnail(interaction.user.displayAvatarURL({ size: AVATAR_SIZES.LARGE }))
+            .addFields([
+              { name: 'VRChat Name', value: cleanName, inline: true },
+              { name: 'Action', value: isNewBinding ? 'New Binding' : 'Update', inline: true },
+              { name: 'Progress', value: `${progress.bound}/${progress.total} (${progress.percentage}%)`, inline: true }
+            ])
+            .setFooter({ text: `Server: ${interaction.guild!.name}` })
+            .setTimestamp();
+
+          // 如果是更新且名字改变了，显示旧名字
+          if (!isNewBinding && existingBinding && existingBinding.vrchatName !== cleanName) {
+            notifyEmbed.addFields({ 
+              name: 'Previous Name', 
+              value: existingBinding.vrchatName, 
+              inline: false 
+            });
+          }
+          
+          // 发送私信（捕获错误，避免影响主流程）
+          await notifyUser.send({ embeds: [notifyEmbed] }).catch(err => {
+            logger.warn(`Failed to send notification to user ${guild.notifyUserId}: ${err.message}`);
+          });
+        }
+      } catch (error) {
+        logger.error('Failed to send notification:', error);
+      }
+    }
     
     // 设置用户冷却时间（存储过期时间戳）
     userCooldowns.set(userId, Date.now() + COOLDOWNS.CHANGENAME);

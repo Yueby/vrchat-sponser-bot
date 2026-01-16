@@ -2,8 +2,8 @@ import { Client, GatewayIntentBits, Interaction, Options } from 'discord.js';
 import mongoose from 'mongoose';
 import { MONITORING } from './config/constants';
 import { handleCommand } from './handlers/commandHandler';
-import { handleGuildCreate, handleGuildDelete, syncAllGuilds } from './handlers/guildEvents';
-import { handleMemberAdd, handleMemberRemove } from './handlers/memberEvents';
+import { handleGuildCreate, handleGuildDelete } from './handlers/guildEvents';
+import { handleMemberAdd, handleMemberRemove, handleMemberUpdate } from './handlers/memberEvents';
 import { logger } from './utils/logger';
 import { startMemoryMonitor } from './utils/memory';
 
@@ -52,10 +52,10 @@ client.once('clientReady', async () => {
   logger.bot(`Logged in as ${client.user?.tag}`);
   logger.network(`Connected to ${client.guilds.cache.size} servers`);
       
-  // 自动同步所有服务器
+  // 不再自动同步，等待服主配置 managedRoleIds
   logger.info('');
-  logger.info('[Sync Guilds]');
-  await syncAllGuilds(client.guilds.cache);
+  logger.info('[Ready]');
+  logger.info('Waiting for guild owners to configure managed roles via /server roles');
   
   // 🚀 启动内存监控
   logger.info('');
@@ -71,6 +71,9 @@ client.on('guildDelete', handleGuildDelete);
 
 // 成员加入服务器
 client.on('guildMemberAdd', handleMemberAdd);
+
+// 成员角色更新
+client.on('guildMemberUpdate', handleMemberUpdate);
 
 // 成员离开服务器
 client.on('guildMemberRemove', handleMemberRemove);

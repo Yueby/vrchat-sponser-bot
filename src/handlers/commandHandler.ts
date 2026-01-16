@@ -10,9 +10,12 @@ import { handleAdminMemory } from '../commands/admin/memory';
 import { handleAdminSearch } from '../commands/admin/search';
 import { handleAdminSync } from '../commands/admin/sync';
 import { handleAdminUnbind } from '../commands/admin/unbind';
+import { handleAdminUnbound } from '../commands/admin/unbound';
 import { handleChangeName } from '../commands/changename';
 import { handleHistory } from '../commands/history';
 import { handleServerApi } from '../commands/server/api';
+import { handleServerNotify } from '../commands/server/notify';
+import { handleServerRoles } from '../commands/server/roles';
 import { handleServerStats } from '../commands/server/stats';
 import { handleWhoAmI } from '../commands/whoami';
 import { logger } from '../utils/logger';
@@ -31,7 +34,13 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
 
       case 'server':
         const serverSubcommand = interaction.options.getSubcommand();
-        if (serverSubcommand === 'stats') {
+        const serverGroup = interaction.options.getSubcommandGroup(false);
+        
+        if (serverGroup === 'roles') {
+          await handleServerRoles(interaction);
+        } else if (serverSubcommand === 'notify') {
+          await handleServerNotify(interaction);
+        } else if (serverSubcommand === 'stats') {
           await handleServerStats(interaction);
         } else if (serverSubcommand === 'api') {
           await handleServerApi(interaction);
@@ -44,6 +53,8 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
           await handleAdminSync(interaction);
         } else if (adminSubcommand === 'unbind') {
           await handleAdminUnbind(interaction);
+        } else if (adminSubcommand === 'unbound') {
+          await handleAdminUnbound(interaction);
         } else if (adminSubcommand === 'memory') {
           await handleAdminMemory(interaction);
         } else if (adminSubcommand === 'search') {
