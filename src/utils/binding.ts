@@ -1,7 +1,6 @@
 // 绑定进度计算和角色检查工具函数
 import { Guild, GuildMember } from 'discord.js';
 import { client } from '../bot';
-import DiscordUser from '../models/DiscordUser';
 import GuildModel from '../models/Guild';
 import VRChatBinding from '../models/VRChatBinding';
 import { logger } from './logger';

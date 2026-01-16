@@ -104,7 +104,7 @@ const commands = [
     .addSubcommand(subcommand =>
       subcommand
         .setName('memory')
-        .setDescription('View or manage bot memory usage')
+        .setDescription('View or manage bot memory usage (Owner only)')
         .addStringOption(option =>
           option.setName('action')
             .setDescription('Action to perform')

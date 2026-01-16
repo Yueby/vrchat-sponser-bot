@@ -1,7 +1,7 @@
 // /admin memory 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
-import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
+import { handleCommandError, requireGuild, requireOwner } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 import { clearCaches, getCacheStats, getMemoryUsage } from '../../utils/memory';
 
@@ -13,7 +13,8 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
     const guildId = requireGuild(interaction);
     if (!guildId) return;
     
-    if (!requireAdmin(interaction)) return;
+    // 权限检查：仅服务器所有者（Bot 内核操作）
+    if (!requireOwner(interaction)) return;
     
     const action = interaction.options.getString('action') || 'status';
     
