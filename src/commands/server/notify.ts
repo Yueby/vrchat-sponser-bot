@@ -1,6 +1,6 @@
 // /server notify 命令处理 - 配置通知目标用户
 import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
-import { EMBED_COLORS } from '../../config/constants';
+import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { handleCommandError, requireGuild, requireOwner } from '../../utils/errors';
 import { logger } from '../../utils/logger';

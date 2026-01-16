@@ -35,18 +35,8 @@ export async function handleAdminSync(interaction: ChatInputCommandInteraction):
       return;
     }
 
-    // 准备批量更新数据
-    const userData = members.map(member => ({
-      userId: member.id,
-      guildId,
-      roles: getMemberRoleIds(member),
-      isBooster: isMemberBooster(member),
-      joinedAt: member.joinedAt || new Date(),
-      updatedAt: new Date()
-    }));
-
     // 批量同步（使用批量操作提升性能）
-    const { upsertedCount, modifiedCount } = await bulkUpsertDiscordUsers(userData);
+    const { upsertedCount, modifiedCount } = await bulkUpsertDiscordUsers(members, guildId);
     const syncCount = upsertedCount + modifiedCount;
 
     // 更新 Guild 的 lastSyncAt
