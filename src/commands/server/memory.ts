@@ -1,4 +1,4 @@
-// /admin memory 命令处理
+// /server memory 命令处理
 import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import { handleCommandError, requireGuild, requireOwner } from '../../utils/errors';
@@ -8,7 +8,7 @@ import { clearCaches, getCacheStats, getMemoryUsage } from '../../utils/memory';
 /**
  * 处理 /admin memory 命令
  */
-export async function handleAdminMemory(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function handleServerMemory(interaction: ChatInputCommandInteraction): Promise<void> {
   try {
     const guildId = requireGuild(interaction);
     if (!guildId) return;
@@ -27,7 +27,7 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
       
       const embed = new EmbedBuilder()
         .setAuthor({
-          name: 'Admin Action: Memory Status',
+          name: 'Server Action: Memory Status',
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
         .setTitle('Memory & Cache Status')
@@ -93,7 +93,7 @@ export async function handleAdminMemory(interaction: ChatInputCommandInteraction
       
       const embed = new EmbedBuilder()
         .setAuthor({
-          name: 'Admin Action: Clear Cache',
+          name: 'Server Action: Clear Cache',
           iconURL: interaction.user.displayAvatarURL({ size: AVATAR_SIZES.SMALL })
         })
         .setTitle('Cache Cleared')

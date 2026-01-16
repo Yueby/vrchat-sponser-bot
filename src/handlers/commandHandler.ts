@@ -6,13 +6,13 @@ import {
     handleExternalRemove,
     handleExternalUpdate
 } from '../commands/admin/external';
-import { handleAdminMemory } from '../commands/admin/memory';
 import { handleAdminSearch } from '../commands/admin/search';
 import { handleAdminUnbind } from '../commands/admin/unbind';
 import { handleAdminUnbound } from '../commands/admin/unbound';
 import { handleChangeName } from '../commands/changename';
 import { handleHistory } from '../commands/history';
 import { handleServerApi } from '../commands/server/api';
+import { handleServerMemory } from '../commands/server/memory';
 import { handleServerNotify } from '../commands/server/notify';
 import { handleServerRoles } from '../commands/server/roles';
 import { handleServerStats } from '../commands/server/stats';
@@ -46,6 +46,8 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
           await handleServerApi(interaction);
         } else if (serverSubcommand === 'sync') {
           await handleServerSync(interaction);
+        } else if (serverSubcommand === 'memory') {
+          await handleServerMemory(interaction);
         }
         break;
 
@@ -55,8 +57,6 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
           await handleAdminUnbind(interaction);
         } else if (adminSubcommand === 'unbound') {
           await handleAdminUnbound(interaction);
-        } else if (adminSubcommand === 'memory') {
-          await handleAdminMemory(interaction);
         } else if (adminSubcommand === 'search') {
           await handleAdminSearch(interaction);
         }

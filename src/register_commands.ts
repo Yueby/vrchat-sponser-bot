@@ -84,22 +84,6 @@ const commands = [
       subcommand
         .setName('sync')
         .setDescription('Manually sync members with managed roles to database')
-    ),
-
-  // /admin - 管理员命令（包含 unbind、memory 子命令）
-  new SlashCommandBuilder()
-    .setName('admin')
-    .setDescription('Administrator commands')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('unbind')
-        .setDescription('Force unbind a user\'s VRChat name')
-        .addUserOption(option =>
-          option.setName('user')
-            .setDescription('The user to unbind')
-            .setRequired(true)
-        )
     )
     .addSubcommand(subcommand =>
       subcommand
@@ -113,6 +97,22 @@ const commands = [
               { name: 'View Status', value: 'status' },
               { name: 'Clear Cache', value: 'clear' }
             )
+        )
+    ),
+
+  // /admin - 管理员命令
+  new SlashCommandBuilder()
+    .setName('admin')
+    .setDescription('Administrator commands')
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('unbind')
+        .setDescription('Force unbind a user\'s VRChat name')
+        .addUserOption(option =>
+          option.setName('user')
+            .setDescription('The user to unbind')
+            .setRequired(true)
         )
     )
     .addSubcommand(subcommand =>
