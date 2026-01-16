@@ -4,7 +4,6 @@ import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { getMembersWithRoles } from '../../utils/binding';
 import { bulkUpsertDiscordUsers } from '../../utils/database';
-import { getMemberRoleIds, isMemberBooster } from '../../utils/discord';
 import { handleCommandError, requireAdmin, requireGuild } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 
