@@ -5,7 +5,6 @@
  */
 export interface SponsorData {
   vrchatName: string;
-  displayName: string;
   avatar: string;
   isBooster: boolean;
   joinedAt: string | null;

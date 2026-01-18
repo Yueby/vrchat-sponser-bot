@@ -145,10 +145,6 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     // 处理服务器成员绑定
     bindings.forEach(binding => {
       const discordUser = discordUserMap.get(binding.discordUserId);
-      const member = discordGuild.members.cache.get(binding.discordUserId);
-      
-      // 实时获取 displayName
-      const displayName = member?.displayName || binding.vrchatName;
       
       // 实时获取头像
       const user = client.users.cache.get(binding.discordUserId);
@@ -170,7 +166,6 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       if (roleNames.length > 0) {
         const userData: SponsorData = {
           vrchatName: binding.vrchatName,
-          displayName,
           avatar,
           isBooster: discordUser?.isBooster || false,
           joinedAt: discordUser?.joinedAt?.toISOString() || null,
@@ -208,7 +203,6 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       
       const userData: SponsorData = {
         vrchatName: externalUser.vrchatName,
-        displayName: externalUser.displayName || externalUser.vrchatName,
         avatar,
         isBooster: false,  // 外部用户不能是 Booster
         joinedAt: externalUser.addedAt.toISOString(),
