@@ -154,12 +154,15 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       const user = client.users.cache.get(binding.discordUserId);
       const avatar = user?.displayAvatarURL({ size: AVATAR_SIZES.LARGE }) || '';
       
-      // 实时获取角色名称
+      // 实时获取角色名称（只获取管理角色）
       const roleNames: string[] = [];
       if (discordUser?.roles) {
         discordUser.roles.forEach(roleId => {
-          const role = discordGuild.roles.cache.get(roleId);
-          if (role) roleNames.push(role.name);
+          // 只获取配置的管理角色
+          if (managedRoleIds.has(roleId)) {
+            const role = discordGuild.roles.cache.get(roleId);
+            if (role) roleNames.push(role.name);
+          }
         });
       }
       
