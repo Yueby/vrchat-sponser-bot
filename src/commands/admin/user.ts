@@ -113,6 +113,78 @@ async function handleUserRemove(interaction: ChatInputCommandInteraction, guildI
 }
 
 /**
+ * /admin user update - 更新现有用户信息
+ */
+async function handleUserUpdate(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
+  const userId = interaction.options.getString('user_id', true);
+  const newVrchatName = interaction.options.getString('vrchat_name');
+  const rolesString = interaction.options.getString('roles');
+  const externalName = interaction.options.getString('external_name');
+  const notes = interaction.options.getString('notes');
+
+  const user = await User.findOne({ userId, guildId });
+  if (!user) {
+    await interaction.editReply(`🔴 User with ID \`${userId}\` not found.`);
+    return;
+  }
+
+  const updates: any = { updatedAt: new Date() };
+  const bindUpdates: any = { bindTime: new Date() };
+  const auditLogs = [];
+
+  if (rolesString) {
+    updates.roles = parseRoles(rolesString);
+    auditLogs.push(`Roles: **${updates.roles.join(', ')}**`);
+  }
+
+  if (externalName) {
+    updates.displayName = externalName;
+    auditLogs.push(`Display Name: **${externalName}**`);
+  }
+
+  if (notes !== null) {
+    updates.notes = notes || undefined;
+    auditLogs.push(`Notes: **${notes || 'Cleared'}**`);
+  }
+
+  if (newVrchatName) {
+    const cleanName = sanitizeVRChatName(newVrchatName);
+    const validation = validateVRChatName(cleanName);
+    if (!validation.valid) {
+      await interaction.editReply(`🔴 ${validation.error}`);
+      return;
+    }
+    
+    // 更新绑定
+    const existingBinding = await VRChatBinding.findOne({ userId, guildId });
+    if (existingBinding) {
+      if (existingBinding.vrchatName !== cleanName) {
+        bindUpdates.vrchatName = cleanName;
+        bindUpdates.$push = { nameHistory: { name: existingBinding.vrchatName, changedAt: new Date() } };
+      }
+    } else {
+      await VRChatBinding.create({ userId, guildId, vrchatName: cleanName, firstBindTime: new Date(), bindTime: new Date() });
+    }
+    auditLogs.push(`VRChat Name: **${cleanName}**`);
+  }
+
+  await User.updateOne({ userId, guildId }, { $set: updates });
+  if (bindUpdates.vrchatName || bindUpdates.$push) {
+    await VRChatBinding.updateOne({ userId, guildId }, bindUpdates);
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle('User Updated')
+    .setDescription(`Successfully updated settings for **${user.displayName || userId}**.`)
+    .addFields({ name: 'Changes', value: auditLogs.length > 0 ? auditLogs.join('\n') : 'No changes' })
+    .setColor(EMBED_COLORS.SUCCESS)
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [embed] });
+  logger.info(`Admin ${interaction.user.username} updated user ${userId}`);
+}
+
+/**
  * 路由器
  */
 export async function handleAdminUserCommand(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -127,6 +199,7 @@ export async function handleAdminUserCommand(interaction: ChatInputCommandIntera
   try {
     switch (subcommand) {
       case 'add': await handleUserAdd(interaction, guildId); break;
+      case 'update': await handleUserUpdate(interaction, guildId); break;
       case 'list': await handleUserList(interaction, guildId); break;
       case 'remove': await handleUserRemove(interaction, guildId); break;
       default: await interaction.editReply('🔴 Unknown subcommand.');

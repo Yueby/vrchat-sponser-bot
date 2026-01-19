@@ -33,6 +33,7 @@
 
 - **用户管理 (`/admin user`)**：
   - `/admin user add` - 智能添加赞助者（支持服务器成员链接或纯外部用户）
+  - `/admin user update` - 更新现有用户的 VRChat 名、角色、备注等
   - `/admin user list` - 分类列出所有已登记的赞助者（Discord/Manual）
   - `/admin user remove` - 通过 ID 彻底移除赞助者档案
 - **系统维护**：

@@ -60,6 +60,15 @@ const commands = [
             .addStringOption(opt => opt.setName('type').setDescription('Filter by type').addChoices({ name: 'Discord', value: 'discord' }, { name: 'Manual', value: 'manual' }))
         )
         .addSubcommand(sub =>
+          sub.setName('update')
+            .setDescription('Update an existing user (Discord or Manual)')
+            .addStringOption(opt => opt.setName('user_id').setDescription('The ID of the user to update').setRequired(true))
+            .addStringOption(opt => opt.setName('vrchat_name').setDescription('New VRChat Name').setRequired(false))
+            .addStringOption(opt => opt.setName('roles').setDescription('New comma-separated roles').setRequired(false))
+            .addStringOption(opt => opt.setName('external_name').setDescription('New manual display name').setRequired(false))
+            .addStringOption(opt => opt.setName('notes').setDescription('New admin notes').setRequired(false))
+        )
+        .addSubcommand(sub =>
           sub.setName('remove')
             .setDescription('Remove a user')
             .addStringOption(opt => opt.setName('user_id').setDescription('User ID to remove').setRequired(true))
