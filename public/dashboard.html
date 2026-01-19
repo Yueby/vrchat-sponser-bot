@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRChat Sponsor Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="/components/stats-header.js" type="module"></script>
+    <script src="/components/role-group.js" type="module"></script>
+    <script src="/components/sponsor-card.js" type="module"></script>
+</head>
+<body class="dark-theme">
+    <div class="container">
+        <stats-header id="stats"></stats-header>
+        <div id="dashboard" class="role-grid">
+            <div class="loading">Loading sponsors...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        async function loadDashboard() {
+            const guildId = window.location.pathname.split('/').pop();
+            const container = document.getElementById('dashboard');
+            const statsHeader = document.getElementById('stats');
+
+            try {
+                const response = await fetch(`/api/vrchat/sponsors/${guildId}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                if (!data.allRoles || data.allRoles.length === 0) {
+                    container.innerHTML = `<div class="empty">No sponsors found for this server.</div>`;
+                    return;
+                }
+
+                // Update Stats
+                const totalSponsors = data.allRoles.reduce((acc, role) => acc + Object.keys(data[role]).length, 0);
+                statsHeader.setAttribute('total', totalSponsors);
+                statsHeader.setAttribute('roles-count', data.allRoles.length);
+
+                // Clear loading
+                container.innerHTML = '';
+
+                // Render Roles
+                data.allRoles.forEach(roleName => {
+                    const group = document.createElement('role-group');
+                    group.setAttribute('name', roleName);
+                    group.sponsors = Object.values(data[roleName]);
+                    container.appendChild(group);
+                });
+
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to connect to API</div>`;
+                console.error(error);
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

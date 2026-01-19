@@ -1,12 +1,13 @@
 // 命令路由处理器
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import {
-    handleExternalAdd,
-    handleExternalList,
-    handleExternalRemove,
-    handleExternalUpdate
+  handleExternalAdd,
+  handleExternalList,
+  handleExternalRemove,
+  handleExternalUpdate
 } from '../commands/admin/external';
 import { handleAdminSearch } from '../commands/admin/search';
+import { handleAdminRefresh } from '../commands/admin/refresh';
 import { handleAdminUnbind } from '../commands/admin/unbind';
 import { handleAdminUnbound } from '../commands/admin/unbound';
 import { handleChangeName } from '../commands/changename';
@@ -35,7 +36,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
       case 'server':
         const serverSubcommand = interaction.options.getSubcommand();
         const serverGroup = interaction.options.getSubcommandGroup(false);
-        
+
         if (serverGroup === 'roles') {
           await handleServerRoles(interaction);
         } else if (serverSubcommand === 'notify') {
@@ -59,6 +60,8 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
           await handleAdminUnbound(interaction);
         } else if (adminSubcommand === 'search') {
           await handleAdminSearch(interaction);
+        } else if (adminSubcommand === 'refresh') {
+          await handleAdminRefresh(interaction);
         }
         break;
 

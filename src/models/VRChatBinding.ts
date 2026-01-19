@@ -30,4 +30,7 @@ VRChatBindingSchema.index({ discordUserId: 1, guildId: 1 }, { unique: true });
 // 优化 API 查询性能：按 guildId 查询并按 bindTime 排序
 VRChatBindingSchema.index({ guildId: 1, bindTime: -1 });
 
+// 优化名称搜索性能
+VRChatBindingSchema.index({ vrchatName: 1 });
+
 export default mongoose.model<IVRChatBinding>('VRChatBinding', VRChatBindingSchema);

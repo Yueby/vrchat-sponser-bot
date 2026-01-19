@@ -32,7 +32,7 @@ const commands = [
           sub
             .setName('add')
             .setDescription('Add a role to track')
-            .addRoleOption(opt => 
+            .addRoleOption(opt =>
               opt.setName('role')
                 .setDescription('Role to track')
                 .setRequired(true)
@@ -42,7 +42,7 @@ const commands = [
           sub
             .setName('remove')
             .setDescription('Remove a tracked role')
-            .addRoleOption(opt => 
+            .addRoleOption(opt =>
               opt.setName('role')
                 .setDescription('Role to remove')
                 .setRequired(true)
@@ -139,6 +139,11 @@ const commands = [
       subcommand
         .setName('unbound')
         .setDescription('View list of members who haven\'t bound VRChat names')
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName('refresh')
+        .setDescription('Clear the API cache for this server')
     ),
 
   // /whoami - 查看自己的信息
