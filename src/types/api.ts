@@ -4,6 +4,8 @@
  * VRChat 赞助者数据格式
  */
 export interface SponsorData {
+  userId: string;
+  guildId: string;
   vrchatName: string;
   avatar: string;
   isBooster: boolean;

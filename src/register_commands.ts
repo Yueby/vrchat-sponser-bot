@@ -1,266 +1,112 @@
-import { PermissionFlagsBits, REST, Routes, SlashCommandBuilder } from 'discord.js';
-import dotenv from 'dotenv';
-import { validateEnv } from './utils/env';
+import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import * as dotenv from 'dotenv';
 import { logger } from './utils/logger';
 
 dotenv.config();
-validateEnv(); // 使用统一的环境变量验证
 
 const { DISCORD_TOKEN, CLIENT_ID } = process.env;
 
+if (!DISCORD_TOKEN || !CLIENT_ID) {
+  logger.error('Missing DISCORD_TOKEN or CLIENT_ID in environment variables');
+  process.exit(1);
+}
+
 const commands = [
-  // /changename - 绑定或更新 VRChat 名字
+  // 1. 全能用户指令集 (/user)
   new SlashCommandBuilder()
-    .setName('changename')
-    .setDescription('Bind or update your VRChat name')
-    .addStringOption(option =>
-      option.setName('name')
-        .setDescription('Your VRChat display name')
-        .setRequired(true)
+    .setName('user')
+    .setDescription('Personal profile and settings')
+    .addSubcommand(sub =>
+      sub.setName('me')
+        .setDescription('View your profile cards and sponsorship status')
+    )
+    .addSubcommand(sub =>
+      sub.setName('update')
+        .setDescription('Update your VRChat name or custom avatar')
+        .addStringOption(opt =>
+          opt.setName('vrchat_name')
+            .setDescription('New VRChat display name')
+            .setRequired(false))
+        .addStringOption(opt =>
+          opt.setName('avatar_url')
+            .setDescription('Direct link to a custom avatar image')
+            .setRequired(false))
+    )
+    .addSubcommand(sub =>
+      sub.setName('history')
+        .setDescription('View your VRChat name change history')
     ),
 
-  // /server - 服务器管理命令
-  new SlashCommandBuilder()
-    .setName('server')
-    .setDescription('Server management commands')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addSubcommandGroup(group =>
-      group
-        .setName('roles')
-        .setDescription('Manage tracked roles (Owner only)')
-        .addSubcommand(sub =>
-          sub
-            .setName('add')
-            .setDescription('Add a role to track')
-            .addRoleOption(opt =>
-              opt.setName('role')
-                .setDescription('Role to track')
-                .setRequired(true)
-            )
-        )
-        .addSubcommand(sub =>
-          sub
-            .setName('remove')
-            .setDescription('Remove a tracked role')
-            .addRoleOption(opt =>
-              opt.setName('role')
-                .setDescription('Role to remove')
-                .setRequired(true)
-            )
-        )
-        .addSubcommand(sub =>
-          sub.setName('list').setDescription('View current tracked roles')
-        )
-        .addSubcommand(sub =>
-          sub.setName('clear').setDescription('Clear all tracked roles')
-        )
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('notify')
-        .setDescription('Configure changename notification target (Owner only)')
-        .addUserOption(option =>
-          option.setName('user')
-            .setDescription('User to receive notifications (leave empty to clear)')
-            .setRequired(false)
-        )
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('stats')
-        .setDescription('View server statistics and API information')
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('api')
-        .setDescription('Enable or disable API access (Owner only)')
-        .addBooleanOption(option =>
-          option.setName('enabled')
-            .setDescription('Enable or disable API access')
-            .setRequired(true)
-        )
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('sync')
-        .setDescription('Manually sync members with managed roles to database')
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('memory')
-        .setDescription('View or manage bot memory usage (Owner only)')
-        .addStringOption(option =>
-          option.setName('action')
-            .setDescription('Action to perform')
-            .setRequired(false)
-            .addChoices(
-              { name: 'View Status', value: 'status' },
-              { name: 'Clear Cache', value: 'clear' }
-            )
-        )
-    ),
-
-  // /admin - 管理员命令
+  // 2. 统合管理指令集 (/admin)
   new SlashCommandBuilder()
     .setName('admin')
-    .setDescription('Administrator commands')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('unbind')
-        .setDescription('Force unbind a user\'s VRChat name')
-        .addUserOption(option =>
-          option.setName('user')
-            .setDescription('The user to unbind')
-            .setRequired(true)
+    .setDescription('Maintenance and administration')
+    // 用户管理组
+    .addSubcommandGroup(group =>
+      group.setName('user')
+        .setDescription('Manage sponsors manually')
+        .addSubcommand(sub =>
+          sub.setName('add')
+            .setDescription('Manually add a sponsor')
+            .addStringOption(opt => opt.setName('vrchat_name').setDescription('VRChat Name').setRequired(true))
+            .addStringOption(opt => opt.setName('roles').setDescription('Comma-separated roles').setRequired(true))
+            .addUserOption(opt => opt.setName('server_member').setDescription('Link to a server member (optional)'))
+            .addStringOption(opt => opt.setName('external_name').setDescription('Manual display name if not in server'))
+            .addStringOption(opt => opt.setName('notes').setDescription('Admin notes'))
+        )
+        .addSubcommand(sub =>
+          sub.setName('list')
+            .setDescription('List all sponsors')
+            .addStringOption(opt => opt.setName('type').setDescription('Filter by type').addChoices({ name: 'Discord', value: 'discord' }, { name: 'Manual', value: 'manual' }))
+        )
+        .addSubcommand(sub =>
+          sub.setName('remove')
+            .setDescription('Remove a user')
+            .addStringOption(opt => opt.setName('user_id').setDescription('User ID to remove').setRequired(true))
         )
     )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('search')
-        .setDescription('Search for users by VRChat name, Discord ID, or role')
-        .addStringOption(option =>
-          option.setName('type')
-            .setDescription('Search type')
-            .setRequired(true)
-            .addChoices(
-              { name: 'VRChat Name', value: 'vrchat' },
-              { name: 'Discord ID', value: 'discord' },
-              { name: 'Role', value: 'role' }
-            )
-        )
-        .addStringOption(option =>
-          option.setName('value')
-            .setDescription('Search value (partial match for VRChat/Role, exact for Discord ID)')
-            .setRequired(true)
-        )
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('unbound')
-        .setDescription('View list of members who haven\'t bound VRChat names')
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('refresh')
-        .setDescription('Clear the API cache for this server')
-    ),
+    // 维护指令
+    .addSubcommand(sub => sub.setName('search').setDescription('Search for any user').addStringOption(opt => opt.setName('type').setDescription('Search type').setRequired(true).addChoices({ name: 'VRChat Name', value: 'vrchat' }, { name: 'Discord ID', value: 'discord' }, { name: 'Role', value: 'role' })).addStringOption(opt => opt.setName('value').setDescription('Value to search for').setRequired(true)))
+    .addSubcommand(sub => sub.setName('refresh').setDescription('Force refresh data cache'))
+    .addSubcommand(sub => sub.setName('unbound').setDescription('List sponsors without VRChat binding')),
 
-  // /whoami - 查看自己的信息
+  // 3. 服务器配置指令集 (/server)
   new SlashCommandBuilder()
-    .setName('whoami')
-    .setDescription('View your profile and binding status'),
+    .setName('server')
+    .setDescription('Server core settings')
+    .addSubcommandGroup(group =>
+      group.setName('sync')
+        .setDescription('Sync settings')
+        .addSubcommand(sub => sub.setName('channel').setDescription('Configure sync logs channel').addChannelOption(opt => opt.setName('channel').setDescription('Channel to send logs').setRequired(true)))
+        .addSubcommand(sub => sub.setName('status').setDescription('View sync status'))
+    )
+    .addSubcommandGroup(group =>
+      group.setName('roles')
+        .setDescription('Managed roles settings')
+        .addSubcommand(sub => sub.setName('add').setDescription('Add a role to manage').addRoleOption(opt => opt.setName('role').setDescription('Role to manage').setRequired(true)))
+        .addSubcommand(sub => sub.setName('list').setDescription('List all managed roles'))
+    )
+    .addSubcommandGroup(group =>
+      group.setName('api')
+        .setDescription('Web API settings')
+        .addSubcommand(sub => sub.setName('toggle').setDescription('Enable/Disable Web API Access'))
+        .addSubcommand(sub => sub.setName('status').setDescription('View API status and key'))
+    )
+    .addSubcommand(sub =>
+      sub.setName('notify')
+        .setDescription('Set a user to receive name change notifications')
+        .addUserOption(opt => opt.setName('user').setDescription('User to notify (leave empty to clear)').setRequired(false))
+    )
+].map(command => command.toJSON());
 
-  // /history - 查看绑定历史
-  new SlashCommandBuilder()
-    .setName('history')
-    .setDescription('View your VRChat name change history'),
-
-  // /external - 外部用户管理命令（管理员专用）
-  new SlashCommandBuilder()
-    .setName('external')
-    .setDescription('Manage external users who cannot join the server (Admin only)')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('add')
-        .setDescription('Add an external user')
-        .addStringOption(option =>
-          option.setName('vrchat_name')
-            .setDescription('VRChat display name')
-            .setRequired(true)
-        )
-        .addStringOption(option =>
-          option.setName('roles')
-            .setDescription('Role names (comma-separated)')
-            .setRequired(true)
-        )
-        .addStringOption(option =>
-          option.setName('discord_user_id')
-            .setDescription('Discord User ID (optional)')
-            .setRequired(false)
-        )
-        .addStringOption(option =>
-          option.setName('display_name')
-            .setDescription('Custom display name (optional)')
-            .setRequired(false)
-        )
-        .addStringOption(option =>
-          option.setName('notes')
-            .setDescription('Additional notes (optional)')
-            .setRequired(false)
-        )
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('update')
-        .setDescription('Update an external user')
-        .addStringOption(option =>
-          option.setName('identifier')
-            .setDescription('VRChat name or Discord ID')
-            .setRequired(true)
-        )
-        .addStringOption(option =>
-          option.setName('vrchat_name')
-            .setDescription('New VRChat name (optional)')
-            .setRequired(false)
-        )
-        .addStringOption(option =>
-          option.setName('roles')
-            .setDescription('New role names (comma-separated, optional)')
-            .setRequired(false)
-        )
-        .addStringOption(option =>
-          option.setName('display_name')
-            .setDescription('New display name (optional)')
-            .setRequired(false)
-        )
-        .addStringOption(option =>
-          option.setName('notes')
-            .setDescription('New notes (optional)')
-            .setRequired(false)
-        )
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('remove')
-        .setDescription('Remove an external user')
-        .addStringOption(option =>
-          option.setName('identifier')
-            .setDescription('VRChat name or Discord ID')
-            .setRequired(true)
-        )
-    )
-    .addSubcommand(subcommand =>
-      subcommand
-        .setName('list')
-        .setDescription('List all external users')
-        .addStringOption(option =>
-          option.setName('role')
-            .setDescription('Filter by role name (optional)')
-            .setRequired(false)
-        )
-    )
-];
-
-const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN!);
+const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);
 
 (async () => {
   try {
-    logger.info('Refreshing application (/) commands...');
-    logger.info(`Registering ${commands.length} commands:`);
-    commands.forEach(cmd => {
-      logger.info(`   - /${cmd.name}`);
-    });
-
-    await rest.put(
-      Routes.applicationCommands(CLIENT_ID!),
-      { body: commands },
-    );
-
+    logger.info('Started refreshing application (/) commands.');
+    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
     logger.success('Successfully reloaded application (/) commands.');
   } catch (error) {
-    logger.error('Failed to register commands:', error);
-    process.exit(1);
+    logger.error('Failed to reload commands:', error);
   }
 })();

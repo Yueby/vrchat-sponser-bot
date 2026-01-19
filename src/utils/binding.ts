@@ -7,34 +7,15 @@ import { logger } from './logger';
 
 /**
  * 检查用户是否拥有管理的角色
- * @param guildId 服务器 ID
- * @param userId 用户 ID
- * @returns boolean
  */
-export async function hasManagedRole(
-  guildId: string,
-  userId: string
-): Promise<boolean> {
+export async function hasManagedRole(guildId: string, userId: string): Promise<boolean> {
   try {
-    // 获取服务器配置
     const guild = await GuildModel.findOne({ guildId });
-    if (!guild || guild.managedRoleIds.length === 0) {
-      return false;
-    }
-
-    // 获取 Discord Guild 对象
+    if (!guild || guild.managedRoleIds.length === 0) return false;
     const discordGuild = client.guilds.cache.get(guildId);
-    if (!discordGuild) {
-      return false;
-    }
-
-    // 获取成员
+    if (!discordGuild) return false;
     const member = await discordGuild.members.fetch(userId).catch(() => null);
-    if (!member) {
-      return false;
-    }
-
-    // 检查成员是否拥有任何一个管理的角色
+    if (!member) return false;
     return member.roles.cache.some(role => guild.managedRoleIds.includes(role.id));
   } catch (error) {
     logger.error('Error checking managed role:', error);
@@ -44,36 +25,16 @@ export async function hasManagedRole(
 
 /**
  * 获取拥有指定角色的所有成员
- * @param guild Discord Guild 对象
- * @param roleIds 角色 ID 列表
- * @returns 成员数组
  */
-export async function getMembersWithRoles(
-  guild: Guild,
-  roleIds: string[]
-): Promise<GuildMember[]> {
+export async function getMembersWithRoles(guild: Guild, roleIds: string[]): Promise<GuildMember[]> {
   try {
-    if (!roleIds || roleIds.length === 0) {
-      logger.warn('getMembersWithRoles called with empty roleIds');
-      return [];
-    }
-
-    // 获取所有成员
-    logger.info(`Fetching members for guild ${guild.name}, roleIds: ${roleIds.join(', ')}`);
+    if (!roleIds || roleIds.length === 0) return [];
     await guild.members.fetch();
-    
-    logger.info(`Total members in cache: ${guild.members.cache.size}`);
-    
-    // 过滤出拥有指定角色的成员（排除 Bot）
     const members = guild.members.cache.filter(member => {
       if (member.user.bot) return false;
       return member.roles.cache.some(role => roleIds.includes(role.id));
     });
-
-    const memberArray = Array.from(members.values());
-    logger.info(`Found ${memberArray.length} members with specified roles`);
-    
-    return memberArray;
+    return Array.from(members.values());
   } catch (error) {
     logger.error('Error fetching members with roles:', error);
     return [];
@@ -82,58 +43,22 @@ export async function getMembersWithRoles(
 
 /**
  * 计算绑定进度
- * @param guildId 服务器 ID
- * @returns { bound: number, total: number, percentage: number }
  */
-export async function calculateBindingProgress(
-  guildId: string
-): Promise<{ bound: number; total: number; percentage: number }> {
+export async function calculateBindingProgress(guildId: string): Promise<{ bound: number; total: number; percentage: number }> {
   try {
-    logger.info(`Calculating binding progress for guild ${guildId}`);
-    
-    // 获取服务器配置
     const guild = await GuildModel.findOne({ guildId });
-    if (!guild) {
-      logger.warn(`Guild ${guildId} not found in database`);
-      return { bound: 0, total: 0, percentage: 0 };
-    }
-    
-    if (guild.managedRoleIds.length === 0) {
-      logger.info(`Guild ${guildId} has no managed roles`);
-      return { bound: 0, total: 0, percentage: 0 };
-    }
-
-    logger.info(`Guild ${guildId} has ${guild.managedRoleIds.length} managed roles`);
-
-    // 获取 Discord Guild 对象
+    if (!guild || guild.managedRoleIds.length === 0) return { bound: 0, total: 0, percentage: 0 };
     const discordGuild = client.guilds.cache.get(guildId);
-    if (!discordGuild) {
-      logger.error(`Discord guild ${guildId} not found in cache`);
-      return { bound: 0, total: 0, percentage: 0 };
-    }
-
-    // 获取拥有管理角色的所有成员
+    if (!discordGuild) return { bound: 0, total: 0, percentage: 0 };
     const members = await getMembersWithRoles(discordGuild, guild.managedRoleIds);
     const total = members.length;
-
-    logger.info(`Total members with managed roles: ${total}`);
-
-    if (total === 0) {
-      logger.warn(`No members found with managed roles in guild ${guildId}`);
-      return { bound: 0, total: 0, percentage: 0 };
-    }
-
-    // 获取这些成员中已绑定的用户
+    if (total === 0) return { bound: 0, total: 0, percentage: 0 };
     const memberIds = members.map(m => m.id);
     const boundCount = await VRChatBinding.countDocuments({
       guildId,
-      discordUserId: { $in: memberIds }
+      userId: { $in: memberIds } // 统一使用 userId
     });
-
-    logger.info(`Bound members: ${boundCount}/${total}`);
-
     const percentage = Math.round((boundCount / total) * 100);
-
     return { bound: boundCount, total, percentage };
   } catch (error) {
     logger.error('Error calculating binding progress:', error);
@@ -142,35 +67,20 @@ export async function calculateBindingProgress(
 }
 
 /**
- * 获取未绑定的成员列表（仅指定角色）
- * @param guildId 服务器 ID
- * @returns 未绑定的成员数组
+ * 获取未绑定的成员列表
  */
 export async function getUnboundMembers(
   guildId: string
 ): Promise<Array<{ userId: string; username: string; displayName: string; roles: string[] }>> {
   try {
-    // 获取服务器配置
     const guild = await GuildModel.findOne({ guildId });
-    if (!guild || guild.managedRoleIds.length === 0) {
-      return [];
-    }
-
-    // 获取 Discord Guild 对象
+    if (!guild || guild.managedRoleIds.length === 0) return [];
     const discordGuild = client.guilds.cache.get(guildId);
-    if (!discordGuild) {
-      return [];
-    }
-
-    // 获取拥有管理角色的所有成员
+    if (!discordGuild) return [];
     const members = await getMembersWithRoles(discordGuild, guild.managedRoleIds);
-
-    // 获取已绑定的用户 ID
-    const bindings = await VRChatBinding.find({ guildId }, 'discordUserId').lean();
-    const boundUserIds = new Set(bindings.map(b => b.discordUserId));
-
-    // 过滤出未绑定的成员
-    const unboundMembers = members
+    const bindings = await VRChatBinding.find({ guildId }, 'userId').lean();
+    const boundUserIds = new Set(bindings.map(b => b.userId));
+    return members
       .filter(member => !boundUserIds.has(member.id))
       .map(member => ({
         userId: member.id,
@@ -178,8 +88,6 @@ export async function getUnboundMembers(
         displayName: member.displayName,
         roles: Array.from(member.roles.cache.keys())
       }));
-
-    return unboundMembers;
   } catch (error) {
     logger.error('Error getting unbound members:', error);
     return [];

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - VRChat Sponsor</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="/components/user-profile.js" type="module"></script>
+    <style>
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 30px;
+            font-weight: 400;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body class="dark-theme">
+    <div class="container" style="max-width: 800px;">
+        <a href="" id="back-to-dashboard" class="back-link">
+            <span>← Back to Dashboard</span>
+        </a>
+        
+        <div id="profile-container">
+            <div class="loading">Loading profile...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        async function loadProfile() {
+            const pathParts = window.location.pathname.split('/');
+            const userId = pathParts.pop();
+            const guildId = pathParts.pop();
+            
+            document.getElementById('back-to-dashboard').href = `/dashboard/${guildId}`;
+            
+            const container = document.getElementById('profile-container');
+
+            try {
+                const response = await fetch(`/api/vrchat/sponsors/${guildId}/${userId}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    container.innerHTML = `<div class="error">Error: ${data.error}</div>`;
+                    return;
+                }
+
+                container.innerHTML = '';
+                const profile = document.createElement('user-profile');
+                profile.user = data;
+                container.appendChild(profile);
+
+            } catch (error) {
+                container.innerHTML = `<div class="error">Failed to connect to API</div>`;
+                console.error(error);
+            }
+        }
+
+        loadProfile();
+    </script>
+</body>
+</html>

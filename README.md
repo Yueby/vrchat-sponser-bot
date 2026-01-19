@@ -4,14 +4,14 @@
 
 ## ✨ 核心特性
 
+- 🛡️ **统合用户架构**：Discord 成员与外部赞助者（Manual）统合在单一模型下，标识一致，查询飞速
 - 🏢 **多服务器支持**：每个 Discord 服务器独立数据，完全隔离
 - 🎯 **基于角色管理**：服主配置要管理的角色，Bot 只追踪这些角色的成员
-- 🚀 **智能缓存**：按需加载成员数据并提供 **1 分钟 API 响应缓存**，极大提升访问速度
+- 🚀 **模块化重构**：指令逻辑分目录异步加载，性能极致优化，代码健壮
 - 🌐 **RESTful API**：按服务器获取赞助者列表（VRChat DataDictionary 格式）
 - 📊 **Web Dashboard**：基于 Web Components 的精美深色系统计面板
-- 👥 **外部用户支持**：为无法加入 Discord 服务器的用户提供虚拟绑定
 - 📜 **历史追踪**：自动记录 VRChat 名称变更历史
-- 🔔 **通知系统**：实时通知管理员用户绑定情况
+- 🔔 **实时通知**：用户更新 VRChat 名字时自动通知管理员
 - 🔐 **访问控制**：服务器所有者可启用/禁用 API
 - ⚡ **限流保护**：180 次/分钟
 
@@ -19,39 +19,48 @@
 
 ## 🎮 命令列表
 
-### 用户命令
-- `/changename <name>` - 绑定或更新 VRChat 名字（需要拥有配置的角色）
-- `/whoami` - 查看自己的绑定状态和详细信息
-- `/history` - 查看 VRChat 名称变更历史记录
+### 1. 👤 个人用户指令 (`/user`)
 
-### 服务器配置命令（所有者）
-- `/server roles add <role>` - 添加要管理的角色
-- `/server roles remove <role>` - 移除管理的角色
-- `/server roles list` - 查看当前管理的角色列表
-- `/server roles clear` - 清除所有角色配置
-- `/server notify <user>` - 设置接收 changename 通知的用户
-- `/server stats` - 查看服务器统计信息、角色配置和绑定进度
-- `/server api <enabled>` - 启用/禁用 API 访问
+用户管理个人资料和设置的统一入口。
 
-### 管理员命令
-- `/admin unbound` - 查看未绑定 VRChat 名字的成员列表
-- `/admin sync` - 手动同步指定角色成员数据
-- `/admin unbind <user>` - 强制解绑指定用户
-- `/admin memory [action]` - 查看或管理 Bot 内存使用情况
-- `/admin search <type> <value>` - 搜索用户
-- `/admin refresh` - 立即清除当前服务器的 API 缓存
+- `/user me` - 查看自己的赞助名片、身份状态及 VRChat 绑定信息
+- `/user update` - 更新自己的 VRChat 显示名或自定义头像链接
+- `/user history` - 查看自己的 VRChat 名称变更历史记录
 
-### 外部用户管理（管理员）
-- `/external add` - 添加外部用户
-- `/external update` - 更新外部用户信息
-- `/external remove` - 删除外部用户
-- `/external list` - 列出所有外部用户
+### 2. 🛠️ 管理维护指令 (`/admin`)
+
+管理员日常维护与数据管理的工具箱。
+
+- **用户管理 (`/admin user`)**：
+  - `/admin user add` - 智能添加赞助者（支持服务器成员链接或纯外部用户）
+  - `/admin user list` - 分类列出所有已登记的赞助者（Discord/Manual）
+  - `/admin user remove` - 通过 ID 彻底移除赞助者档案
+- **系统维护**：
+  - `/admin search` - 全局搜索用户信息（支持 VRChat 名、Discord ID、角色匹配）
+  - `/admin unbound` - 列出拥有赞助角色但尚未绑定 VRChat 名的成员
+  - `/admin refresh` - 立即清除当前服务器的 API 缓存
+
+### 3. ⚙️ 服务器配置指令 (`/server`)
+
+服务器所有者对 Bot 核心行为的全局配置。
+
+- **角色设置 (`/server roles`)**：
+  - `/server roles add` - 添加 Bot 追踪的赞助者角色
+  - `/server roles list` - 查看当前已管理的角色清单
+- **数据同步 (`/server sync`)**：
+  - `/server sync status` - 查看自动同步统计与进度
+- **通知配置 (`/server notify`)**：
+  - `/server notify <user>` - 设置接收绑定变更提醒的管理员
+- **API 管理 (`/server api`)**：
+  - `/server api status` - 查看 API 密钥、状态及 Dashboard 链接
+  - `/server api toggle` - 开启或关闭 Web API 外部访问权限
 
 ---
 
 ## 🌐 API 端点
 
 ### `GET /health`
+
 健康状态检查
 
 ```json
@@ -67,9 +76,11 @@
 ```
 
 ### `GET /api/vrchat/sponsors/:guildId`
+
 获取指定服务器的赞助者列表（VRChat DataDictionary 格式）
 
 **响应示例**：
+
 ```json
 {
   "VIP": {
@@ -87,6 +98,7 @@
 ```
 
 **特点**：
+
 - 按角色分组返回
 - 自动计算支持天数
 - 包含服务器成员和外部用户
@@ -94,7 +106,9 @@
 - 速率限制：180 次/分钟
 
 ### `GET /dashboard/:guildId` (NEW)
+
 **Web 可视化面板**，采用 Web Components 构建的响应式深色界面。
+
 - **功能**：展示服务器总赞助人数、角色分布及详细成员卡片。
 - **访问**：直接在浏览器输入该 URL 即可查看，无需登录。
 
@@ -170,13 +184,13 @@ Bot 会立即同步这些角色的成员数据。
 
 本项目支持以下**验证过无需绑卡的免费平台**，自动检测平台 URL：
 
-| 平台 | CPU | 内存 | 特点 | 推荐度 | 说明 |
-|------|-----|------|------|--------|------|
-| **Koyeb** | 0.1 vCPU | 512 MB | 1小时无流量自动休眠 | ⭐⭐⭐⭐⭐ | 最简单、固定域名 |
-| **Railway** | 1 vCPU | 512 MB | $5/月（约500小时） | ⭐⭐⭐⭐⭐ | 简单易用、额度充足 |
-| **Zeabur** | 1 vCPU | 2 GB | $5/月（按量计费） | ⭐⭐⭐⭐⭐ | 中国友好、配置最高 |
-| **Render** | 0.1 vCPU | 512 MB | 15分钟无活动休眠 | ⭐⭐⭐⭐ | 需保活（UptimeRobot） |
-| **Fly.io** | 1 vCPU | 256 MB | 3个实例 + 160GB流量 | ⭐⭐⭐⭐ | 配置稍复杂但强大 |
+| 平台        | CPU      | 内存   | 特点                | 推荐度     | 说明                  |
+| ----------- | -------- | ------ | ------------------- | ---------- | --------------------- |
+| **Koyeb**   | 0.1 vCPU | 512 MB | 1小时无流量自动休眠 | ⭐⭐⭐⭐⭐ | 最简单、固定域名      |
+| **Railway** | 1 vCPU   | 512 MB | $5/月（约500小时）  | ⭐⭐⭐⭐⭐ | 简单易用、额度充足    |
+| **Zeabur**  | 1 vCPU   | 2 GB   | $5/月（按量计费）   | ⭐⭐⭐⭐⭐ | 中国友好、配置最高    |
+| **Render**  | 0.1 vCPU | 512 MB | 15分钟无活动休眠    | ⭐⭐⭐⭐   | 需保活（UptimeRobot） |
+| **Fly.io**  | 1 vCPU   | 256 MB | 3个实例 + 160GB流量 | ⭐⭐⭐⭐   | 配置稍复杂但强大      |
 
 > 💡 **数据来源**：基于 2026 年 1 月 15 日的官方文档验证，100% 确认无需绑卡
 
@@ -195,6 +209,7 @@ Bot 会立即同步这些角色的成员数据。
 ### Cloudflare Worker 反向代理（推荐）
 
 使用 Cloudflare Worker 作为反向代理，获得：
+
 - 🌐 **固定域名**：无论后端如何变化
 - 🇨🇳 **国内加速**：Cloudflare CDN 加速访问
 - 🔒 **额外保护**：DDoS 防护和限流
@@ -211,42 +226,42 @@ Bot 启动时会自动检测平台并更新 Worker 的 `BACKEND_URL`。
 
 ### 基础配置（必需）
 
-| 变量 | 必需 | 说明 |
-|------|------|------|
-| `DISCORD_TOKEN` | ✅ | Discord Bot Token |
-| `CLIENT_ID` | ✅ | Discord Application ID |
-| `MONGO_URI` | ✅ | MongoDB 连接字符串 |
-| `PORT` | ❌ | HTTP 服务器端口（默认 3000） |
+| 变量            | 必需 | 说明                         |
+| --------------- | ---- | ---------------------------- |
+| `DISCORD_TOKEN` | ✅   | Discord Bot Token            |
+| `CLIENT_ID`     | ✅   | Discord Application ID       |
+| `MONGO_URI`     | ✅   | MongoDB 连接字符串           |
+| `PORT`          | ❌   | HTTP 服务器端口（默认 3000） |
 
 ### Cloudflare Worker 集成（可选）
 
 启用后，Bot 会自动同步后端 URL 到 Worker：
 
-| 变量 | 说明 |
-|------|------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API Token |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID |
-| `CLOUDFLARE_WORKER_NAME` | Worker 名称 |
-| `BACKEND_URL` | 手动指定后端 URL（可选，通常自动检测） |
+| 变量                     | 说明                                   |
+| ------------------------ | -------------------------------------- |
+| `CLOUDFLARE_API_TOKEN`   | Cloudflare API Token                   |
+| `CLOUDFLARE_ACCOUNT_ID`  | Cloudflare Account ID                  |
+| `CLOUDFLARE_WORKER_NAME` | Worker 名称                            |
+| `BACKEND_URL`            | 手动指定后端 URL（可选，通常自动检测） |
 
 **自动平台检测：** Bot 会自动识别以下平台的官方环境变量
 
-| 平台 | 环境变量 | 域名格式 |
-|------|---------|---------|
-| Koyeb | `KOYEB_PUBLIC_DOMAIN` | 自动提供完整域名 |
-| Railway | `RAILWAY_PUBLIC_DOMAIN` / `RAILWAY_STATIC_URL` | 完整 URL |
-| Render | `RENDER_EXTERNAL_URL` / `RENDER_EXTERNAL_HOSTNAME` | 完整 URL 或主机名 |
-| Zeabur | `ZEABUR_WEB_URL` / `ZEABUR_WEB_DOMAIN` | Git 部署服务 |
-| Fly.io | `FLY_APP_NAME` | `${APP_NAME}.fly.dev` |
+| 平台    | 环境变量                                           | 域名格式              |
+| ------- | -------------------------------------------------- | --------------------- |
+| Koyeb   | `KOYEB_PUBLIC_DOMAIN`                              | 自动提供完整域名      |
+| Railway | `RAILWAY_PUBLIC_DOMAIN` / `RAILWAY_STATIC_URL`     | 完整 URL              |
+| Render  | `RENDER_EXTERNAL_URL` / `RENDER_EXTERNAL_HOSTNAME` | 完整 URL 或主机名     |
+| Zeabur  | `ZEABUR_WEB_URL` / `ZEABUR_WEB_DOMAIN`             | Git 部署服务          |
+| Fly.io  | `FLY_APP_NAME`                                     | `${APP_NAME}.fly.dev` |
 
 > 💡 **基于官方文档（2026年1月15日验证）**，100% 确认无需绑卡
 
 ### 其他配置（可选）
 
-| 变量 | 说明 |
-|------|------|
-| `LOG_TIMESTAMP` | 显示日志时间戳（默认 true） |
-| `NODE_ENV` | 运行环境（development/production） |
+| 变量            | 说明                               |
+| --------------- | ---------------------------------- |
+| `LOG_TIMESTAMP` | 显示日志时间戳（默认 true）        |
+| `NODE_ENV`      | 运行环境（development/production） |
 
 ---
 
@@ -267,6 +282,7 @@ Bot 启动时会自动检测平台并更新 Worker 的 `BACKEND_URL`。
 - **权限检查**：`/changename` 命令会检查用户是否拥有配置的角色
 
 ### 缓存管理机制
+
 - **数据缓存**：API 响应默认开启 1 分钟内存缓存，保护服务器免受轮询压力。
 - **手动刷新**：管理员可执行 `/admin refresh` 强行失效当前服务器缓存。
 - **数据库索引**：针对 `vrchatName` 和 `guildId` 进行了索引优化，确保秒级查询。

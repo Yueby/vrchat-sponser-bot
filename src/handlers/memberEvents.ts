@@ -1,6 +1,6 @@
 // 成员事件处理器
 import { GuildMember, PartialGuildMember } from 'discord.js';
-import DiscordUser from '../models/DiscordUser';
+import User from '../models/User';
 import Guild from '../models/Guild';
 import VRChatBinding from '../models/VRChatBinding';
 import { getMemberRoleIds, isMemberBooster } from '../utils/discord';
@@ -13,17 +13,16 @@ export async function handleMemberAdd(member: GuildMember): Promise<void> {
   try {
     if (member.user.bot) return;
     
-    // 确保 Guild 记录存在（防止 Bot 重启后数据丢失）
     await Guild.findOneAndUpdate(
       { guildId: member.guild.id },
       { ownerId: member.guild.ownerId },
       { upsert: true, setDefaultsOnInsert: true }
     );
     
-    // 创建或更新成员记录（使用 upsert 避免重复加入时出错）
-    await DiscordUser.findOneAndUpdate(
+    await User.findOneAndUpdate(
       { userId: member.id, guildId: member.guild.id },
       {
+        userType: 'discord',
         roles: getMemberRoleIds(member),
         isBooster: isMemberBooster(member),
         joinedAt: member.joinedAt || new Date(),
@@ -40,37 +39,30 @@ export async function handleMemberAdd(member: GuildMember): Promise<void> {
 
 /**
  * 处理成员角色更新事件
- * 当成员获得/失去管理的角色时，自动同步该成员数据
  */
 export async function handleMemberUpdate(
   oldMember: GuildMember | PartialGuildMember,
   newMember: GuildMember
 ): Promise<void> {
   const guildId = newMember.guild.id;
-  
   try {
-    // 获取服务器配置
     const guild = await Guild.findOne({ guildId });
     if (!guild || guild.managedRoleIds.length === 0) return;
     
-    // 检查是否涉及管理的角色
     const oldHasRole = oldMember.roles.cache.some(r => guild.managedRoleIds.includes(r.id));
     const newHasRole = newMember.roles.cache.some(r => guild.managedRoleIds.includes(r.id));
     
-    // 角色状态没有变化，跳过
     if (oldHasRole === newHasRole) return;
     
-    // 角色状态发生变化
     if (!newHasRole) {
-      // 失去管理的角色 - 保留数据但标记
       logger.memberLeave(`Member ${newMember.user.tag} lost managed role in ${newMember.guild.name}`);
       return;
     }
     
-    // 获得管理的角色 - 同步成员数据
-    await DiscordUser.findOneAndUpdate(
+    await User.findOneAndUpdate(
       { userId: newMember.id, guildId },
       {
+        userType: 'discord',
         roles: getMemberRoleIds(newMember),
         isBooster: isMemberBooster(newMember),
         joinedAt: newMember.joinedAt || new Date(),
@@ -93,13 +85,12 @@ export async function handleMemberRemove(member: GuildMember | PartialGuildMembe
     const guildId = member.guild.id;
     const username = member.user?.username || 'Unknown User';
 
-    // 删除该用户在该服务器的数据
-    const [discordUserResult, vrchatBindingResult] = await Promise.all([
-      DiscordUser.findOneAndDelete({ userId, guildId }),
-      VRChatBinding.findOneAndDelete({ discordUserId: userId, guildId })
+    const [userResult, bindingResult] = await Promise.all([
+      User.findOneAndDelete({ userId, guildId }),
+      VRChatBinding.findOneAndDelete({ userId, guildId })
     ]);
 
-    if (discordUserResult || vrchatBindingResult) {
+    if (userResult || bindingResult) {
       logger.memberLeave(`User left ${member.guild.name}: ${username} (${userId}). Data deleted.`);
     }
   } catch (error) {

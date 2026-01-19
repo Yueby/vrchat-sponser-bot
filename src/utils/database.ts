@@ -1,6 +1,6 @@
 // 数据库批量操作工具
 import { GuildMember } from 'discord.js';
-import DiscordUser from '../models/DiscordUser';
+import User from '../models/User';
 import { getMemberRoleIds, isMemberBooster } from './discord';
 
 /**
@@ -22,6 +22,7 @@ export async function bulkUpsertDiscordUsers(
         filter: { userId: member.id, guildId },
         update: {
           $set: {
+            userType: 'discord' as const,
             roles: getMemberRoleIds(member),
             isBooster: isMemberBooster(member),
             joinedAt: member.joinedAt || new Date(),
@@ -36,7 +37,7 @@ export async function bulkUpsertDiscordUsers(
     return { upsertedCount: 0, modifiedCount: 0 };
   }
 
-  const result = await DiscordUser.bulkWrite(operations);
+  const result = await User.bulkWrite(operations);
 
   return {
     upsertedCount: result.upsertedCount || 0,
@@ -53,7 +54,7 @@ export async function bulkDeleteGuildData(guildId: string) {
 
   const [guildResult, usersResult, bindingsResult] = await Promise.all([
     Guild.deleteOne({ guildId }),
-    DiscordUser.deleteMany({ guildId }),
+    User.deleteMany({ guildId }),
     VRChatBinding.deleteMany({ guildId })
   ]);
 

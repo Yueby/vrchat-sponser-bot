@@ -24,20 +24,27 @@ async function main(): Promise<void> {
     // 2. Connect to Database
     await connectDB();
 
-    // 3. Login Bot and wait for ready
-    await client.login(process.env.DISCORD_TOKEN!);
-    
-    // Wait for client to be fully ready
-    await new Promise<void>((resolve) => {
-      if (client.isReady()) {
-        resolve();
-      } else {
-        client.once('clientReady', () => resolve());
-      }
-    });
-    
-    // 4. Perform Health Check
-    await performStartupHealthCheck();
+    const isDev = process.env.NODE_ENV === 'development';
+    const hasToken = !!process.env.DISCORD_TOKEN;
+
+    // 3. Login Bot and wait for ready (Only if not dev or has token)
+    if (!isDev || hasToken) {
+      await client.login(process.env.DISCORD_TOKEN!);
+      
+      // Wait for client to be fully ready
+      await new Promise<void>((resolve) => {
+        if (client.isReady()) {
+          resolve();
+        } else {
+          client.once('clientReady', () => resolve());
+        }
+      });
+      
+      // 4. Perform Health Check
+      await performStartupHealthCheck();
+    } else {
+      logger.warn('Skipping Discord login in development mode (No Token provided)');
+    }
     
     logger.info('');
     logger.info('[Ready]');
@@ -45,7 +52,9 @@ async function main(): Promise<void> {
     logger.success('Server started successfully!');
     
     // Auto-update Cloudflare Worker if configured
-    await updateCloudflareWorker();
+    if (!isDev || hasToken) {
+      await updateCloudflareWorker();
+    }
   } catch (error) {
     logger.error('Error during startup:', error);
     throw error;
@@ -57,13 +66,15 @@ async function main(): Promise<void> {
  * 验证所有关键服务正常运行
  */
 async function performStartupHealthCheck(): Promise<void> {
+  const isDev = process.env.NODE_ENV === 'development';
+
   // 检查数据库连接
   if (mongoose.connection.readyState !== 1) {
     throw new Error('Database not connected');
   }
   
-  // 检查 Discord 连接
-  if (!client.isReady()) {
+  // 检查 Discord 连接 (非开发模式)
+  if (!isDev && !client.isReady()) {
     throw new Error('Discord client not ready');
   }
 }

@@ -28,6 +28,8 @@ class SponsorCard extends HTMLElement {
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     position: relative;
                     overflow: hidden;
+                    cursor: pointer;
+                    text-decoration: none;
                 }
                 .card:hover {
                     transform: translateY(-5px);
@@ -76,7 +78,7 @@ class SponsorCard extends HTMLElement {
                     color: #ff73fa;
                 }
             </style>
-            <div class="card">
+            <a href="/dashboard/${user.guildId}/${user.userId}" class="card">
                 <img class="avatar" src="${user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="${user.vrchatName}">
                 <div class="info">
                     <div class="name">${user.vrchatName}</div>
@@ -84,7 +86,7 @@ class SponsorCard extends HTMLElement {
                 </div>
                 ${user.isBooster ? '<span class="badge booster">Booster</span>' : ''}
                 ${user.isExternal ? '<span class="badge">External</span>' : ''}
-            </div>
+            </a>
         `;
     }
 }

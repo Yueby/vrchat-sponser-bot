@@ -1,99 +1,71 @@
-// 命令路由处理器
-import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
-import {
-  handleExternalAdd,
-  handleExternalList,
-  handleExternalRemove,
-  handleExternalUpdate
-} from '../commands/admin/external';
-import { handleAdminSearch } from '../commands/admin/search';
-import { handleAdminRefresh } from '../commands/admin/refresh';
-import { handleAdminUnbind } from '../commands/admin/unbind';
-import { handleAdminUnbound } from '../commands/admin/unbound';
-import { handleChangeName } from '../commands/changename';
-import { handleHistory } from '../commands/history';
-import { handleServerApi } from '../commands/server/api';
-import { handleServerMemory } from '../commands/server/memory';
+import { ChatInputCommandInteraction } from 'discord.js';
+import { handleAdminApiCommand } from '../commands/server/api';
+import { handleAdminRolesCommand } from '../commands/server/roles';
+import { handleAdminSyncCommand } from '../commands/server/sync';
+import { handleAdminRefreshCommand } from '../commands/admin/refresh';
+import { handleAdminSearchCommand } from '../commands/admin/search';
+import { handleAdminUnboundCommand } from '../commands/admin/unbound';
+import { handleAdminUserCommand } from '../commands/admin/user';
+import { handleUserCommand } from '../commands/user/index';
 import { handleServerNotify } from '../commands/server/notify';
-import { handleServerRoles } from '../commands/server/roles';
-import { handleServerStats } from '../commands/server/stats';
-import { handleServerSync } from '../commands/server/sync';
-import { handleWhoAmI } from '../commands/whoami';
 import { logger } from '../utils/logger';
 
 /**
- * 处理所有斜杠命令的中央路由器
+ * 路由所有斜杠命令
  */
 export async function handleCommand(interaction: ChatInputCommandInteraction): Promise<void> {
   const { commandName } = interaction;
 
   try {
     switch (commandName) {
-      case 'changename':
-        await handleChangeName(interaction);
+      // 统合后的用户指令集
+      case 'user':
+        await handleUserCommand(interaction);
         break;
 
+      // 服务器管理指令集
       case 'server':
-        const serverSubcommand = interaction.options.getSubcommand();
-        const serverGroup = interaction.options.getSubcommandGroup(false);
-
-        if (serverGroup === 'roles') {
-          await handleServerRoles(interaction);
-        } else if (serverSubcommand === 'notify') {
-          await handleServerNotify(interaction);
-        } else if (serverSubcommand === 'stats') {
-          await handleServerStats(interaction);
-        } else if (serverSubcommand === 'api') {
-          await handleServerApi(interaction);
-        } else if (serverSubcommand === 'sync') {
-          await handleServerSync(interaction);
-        } else if (serverSubcommand === 'memory') {
-          await handleServerMemory(interaction);
+        const serverSubcommandGroup = interaction.options.getSubcommandGroup();
+        if (serverSubcommandGroup === 'sync') {
+          await handleAdminSyncCommand(interaction);
+        } else if (serverSubcommandGroup === 'roles') {
+          await handleAdminRolesCommand(interaction);
+        } else if (serverSubcommandGroup === 'api') {
+          await handleAdminApiCommand(interaction);
+        } else {
+          const serverSubcommand = interaction.options.getSubcommand();
+          if (serverSubcommand === 'notify') {
+            await handleServerNotify(interaction);
+          }
         }
         break;
 
+      // 管理员维护指令集
       case 'admin':
+        const adminSubcommandGroup = interaction.options.getSubcommandGroup();
         const adminSubcommand = interaction.options.getSubcommand();
-        if (adminSubcommand === 'unbind') {
-          await handleAdminUnbind(interaction);
-        } else if (adminSubcommand === 'unbound') {
-          await handleAdminUnbound(interaction);
+
+        if (adminSubcommandGroup === 'user') {
+          await handleAdminUserCommand(interaction);
         } else if (adminSubcommand === 'search') {
-          await handleAdminSearch(interaction);
+          await handleAdminSearchCommand(interaction);
         } else if (adminSubcommand === 'refresh') {
-          await handleAdminRefresh(interaction);
+          await handleAdminRefreshCommand(interaction);
+        } else if (adminSubcommand === 'unbound') {
+          await handleAdminUnboundCommand(interaction);
         }
-        break;
-
-      case 'external':
-        const externalSubcommand = interaction.options.getSubcommand();
-        if (externalSubcommand === 'add') {
-          await handleExternalAdd(interaction);
-        } else if (externalSubcommand === 'update') {
-          await handleExternalUpdate(interaction);
-        } else if (externalSubcommand === 'remove') {
-          await handleExternalRemove(interaction);
-        } else if (externalSubcommand === 'list') {
-          await handleExternalList(interaction);
-        }
-        break;
-
-      case 'whoami':
-        await handleWhoAmI(interaction);
-        break;
-
-      case 'history':
-        await handleHistory(interaction);
         break;
 
       default:
-        await interaction.reply({
-          content: '🔴 Unknown command',
-          flags: MessageFlags.Ephemeral
-        });
+        logger.warn(`Unknown command: ${commandName}`);
+        break;
     }
   } catch (error) {
-    logger.error('Command handler error:', error);
-    // 这里的错误已经在各个命令处理函数中处理了
+    logger.error(`Error handling command ${commandName}:`, error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ content: '🔴 An error occurred while executing the command.', ephemeral: true });
+    } else {
+      await interaction.editReply('🔴 An error occurred while executing the command.');
+    }
   }
 }

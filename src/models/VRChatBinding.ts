@@ -1,19 +1,23 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
+/**
+ * VRChat 绑定信息模型
+ * 核心变更：使用统一的 userId 关联，不再局限于 Discord ID
+ */
 export interface IVRChatBinding extends Document {
-  discordUserId: string;        // Discord 用户 ID
-  guildId: string;              // 服务器 ID（外键）
-  vrchatName: string;           // VRChat 显示名（核心数据）
-  firstBindTime: Date;          // 首次绑定时间（历史记录）
+  userId: string;               // 用户唯一 ID (关联至 User.userId)
+  guildId: string;              // 服务器 ID
+  vrchatName: string;           // VRChat 显示名
+  firstBindTime: Date;          // 首次绑定时间
   bindTime: Date;               // 最后绑定/更新时间
-  nameHistory?: Array<{         // 名称变更历史（可选）
+  nameHistory?: Array<{         // 名称变更历史
     name: string;
     changedAt: Date;
   }>;
 }
 
 const VRChatBindingSchema: Schema = new Schema({
-  discordUserId: { type: String, required: true },
+  userId: { type: String, required: true },
   guildId: { type: String, required: true },
   vrchatName: { type: String, required: true },
   firstBindTime: { type: Date, default: Date.now },
@@ -24,13 +28,10 @@ const VRChatBindingSchema: Schema = new Schema({
   }]
 });
 
-// 创建复合索引（discordUserId + guildId 作为唯一标识）
-VRChatBindingSchema.index({ discordUserId: 1, guildId: 1 }, { unique: true });
-
-// 优化 API 查询性能：按 guildId 查询并按 bindTime 排序
+// 唯一标识索引：userId + guildId
+VRChatBindingSchema.index({ userId: 1, guildId: 1 }, { unique: true });
+// 优化 API 查询性能
 VRChatBindingSchema.index({ guildId: 1, bindTime: -1 });
-
-// 优化名称搜索性能
 VRChatBindingSchema.index({ vrchatName: 1 });
 
 export default mongoose.model<IVRChatBinding>('VRChatBinding', VRChatBindingSchema);
