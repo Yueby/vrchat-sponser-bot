@@ -76,9 +76,10 @@ const commands = [
     .setDescription('Server core settings')
     .addSubcommandGroup(group =>
       group.setName('sync')
-        .setDescription('Sync settings')
-        .addSubcommand(sub => sub.setName('channel').setDescription('Configure sync logs channel').addChannelOption(opt => opt.setName('channel').setDescription('Channel to send logs').setRequired(true)))
+        .setDescription('Sync settings and actions')
+        .addSubcommand(sub => sub.setName('now').setDescription('Trigger manual synchronization now'))
         .addSubcommand(sub => sub.setName('status').setDescription('View sync status'))
+        .addSubcommand(sub => sub.setName('channel').setDescription('Configure sync logs channel').addChannelOption(opt => opt.setName('channel').setDescription('Channel to send logs').setRequired(true)))
     )
     .addSubcommandGroup(group =>
       group.setName('roles')

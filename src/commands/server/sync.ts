@@ -8,44 +8,82 @@ import { handleCommandError, requireAdmin, requireGuild } from '../../utils/erro
 import { logger } from '../../utils/logger';
 
 /**
- * /server sync - 手动同步服务器成员数据
+ * 路由器
  */
 export async function handleAdminSyncCommand(interaction: ChatInputCommandInteraction): Promise<void> {
   const guildId = requireGuild(interaction);
   if (!guildId) return;
-
   if (!requireAdmin(interaction)) return;
 
+  const subcommand = interaction.options.getSubcommand();
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
-    const startTime = Date.now();
-    const guild = await Guild.findOne({ guildId });
-    if (!guild || guild.managedRoleIds.length === 0) {
-      await interaction.editReply('🔴 No managed roles configured.');
-      return;
+    switch (subcommand) {
+      case 'now': await handleSyncNow(interaction, guildId); break;
+      case 'status': await handleSyncStatus(interaction, guildId); break;
+      case 'channel': await handleSyncChannel(interaction, guildId); break;
+      default: await interaction.editReply('🔴 Unknown subcommand.');
     }
-
-    const members = await getMembersWithRoles(interaction.guild!, guild.managedRoleIds);
-    if (members.length === 0) {
-      await interaction.editReply('🔴 No members found with managed roles.');
-      return;
-    }
-
-    const { upsertedCount, modifiedCount } = await bulkUpsertDiscordUsers(members, guildId);
-    await Guild.updateOne({ guildId }, { lastSyncAt: new Date() });
-
-    const embed = new EmbedBuilder()
-      .setTitle('Sync Complete')
-      .setColor(EMBED_COLORS.SUCCESS)
-      .addFields(
-        { name: 'Stats', value: `Total: ${upsertedCount + modifiedCount}\nNew: ${upsertedCount}\nUpdated: ${modifiedCount}`, inline: true },
-        { name: 'Duration', value: `${((Date.now() - startTime) / 1000).toFixed(2)}s`, inline: true }
-      )
-      .setTimestamp();
-
-    await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     await handleCommandError(interaction, error);
   }
+}
+
+/**
+ * 立即执行同步
+ */
+async function handleSyncNow(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
+  const startTime = Date.now();
+  const guild = await Guild.findOne({ guildId });
+  if (!guild || guild.managedRoleIds.length === 0) {
+    await interaction.editReply('🔴 No managed roles configured. Use `/server roles add` first.');
+    return;
+  }
+
+  const members = await getMembersWithRoles(interaction.guild!, guild.managedRoleIds);
+  if (members.length === 0) {
+    await interaction.editReply('🔴 No members found with managed roles.');
+    return;
+  }
+
+  const { upsertedCount, modifiedCount } = await bulkUpsertDiscordUsers(members, guildId);
+  await Guild.updateOne({ guildId }, { lastSyncAt: new Date() });
+
+  const embed = new EmbedBuilder()
+    .setTitle('Sync Complete')
+    .setColor(EMBED_COLORS.SUCCESS)
+    .addFields(
+      { name: 'Stats', value: `Total: ${upsertedCount + modifiedCount}\nNew: ${upsertedCount}\nUpdated: ${modifiedCount}`, inline: true },
+      { name: 'Duration', value: `${((Date.now() - startTime) / 1000).toFixed(2)}s`, inline: true }
+    )
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [embed] });
+  logger.info(`Admin ${interaction.user.username} triggered manual sync in ${interaction.guild!.name}`);
+}
+
+/**
+ * 查看同步状态
+ */
+async function handleSyncStatus(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
+  const guild = await Guild.findOne({ guildId });
+  const embed = new EmbedBuilder()
+    .setTitle('Sync Status')
+    .setColor(EMBED_COLORS.INFO)
+    .addFields(
+      { name: 'Managed Roles', value: guild?.managedRoleIds.length ? `${guild.managedRoleIds.length} roles` : 'None', inline: true },
+      { name: 'Last Sync', value: guild?.lastSyncAt ? `<t:${Math.floor(guild.lastSyncAt.getTime() / 1000)}:R>` : 'Never', inline: true },
+      { name: 'Log Channel', value: guild?.logChannelId ? `<#${guild.logChannelId}>` : 'Not set', inline: false }
+    );
+  await interaction.editReply({ embeds: [embed] });
+}
+
+/**
+ * 配置日志频道
+ */
+async function handleSyncChannel(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
+  const channel = interaction.options.getChannel('channel', true);
+  await Guild.updateOne({ guildId }, { logChannelId: channel.id });
+  await interaction.editReply(`✅ Sync logs will now be sent to <#${channel.id}>.`);
 }
