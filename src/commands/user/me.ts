@@ -53,11 +53,6 @@ export async function handleUserMe(interaction: ChatInputCommandInteraction, gui
         name: 'Statistics',
         value: `Server Rank: #${rank || '?'}\nGlobal bindings: ${totalBindings}/${totalUsers}`,
         inline: false
-      },
-      {
-        name: '🔗 Links',
-        value: `[Web Dashboard](http://${process.env.DOMAIN || 'localhost'}/dashboard/${guildId}/${userId})`,
-        inline: false
       }
     )
     .setTimestamp();
