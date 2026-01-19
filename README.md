@@ -49,8 +49,7 @@
   - `/server roles list` - 查看当前已管理的角色清单
 - **数据同步 (`/server sync`)**：
   - `/server sync now` - 立即触发手动成员同步
-  - `/server sync status` - 查看同步状态、最后同步时间及日志配置
-  - `/server sync channel` - 配置同步日志发送频道
+  - `/server sync status` - 查看同步状态及最后同步时间
 - **通知配置 (`/server notify`)**：
   - `/server notify <user>` - 设置接收绑定变更提醒的管理员
 - **API 管理 (`/server api`)**：

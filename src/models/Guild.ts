@@ -6,7 +6,6 @@ export interface IGuild extends Document {
   apiEnabled: boolean;          // API 是否可访问（默认 true）
   managedRoleIds: string[];     // 要管理的角色 ID 列表（核心功能）
   notifyUserId?: string;        // 接收 changename 通知的用户 ID（可选）
-  logChannelId?: string;        // 同步日志频道 ID（可选）
   joinedAt: Date;               // Bot 加入时间
   lastSyncAt?: Date;            // 最后同步时间
   lastApiCallAt?: Date;         // 最后 API 调用时间
@@ -18,7 +17,6 @@ const GuildSchema: Schema = new Schema({
   apiEnabled: { type: Boolean, default: true },
   managedRoleIds: { type: [String], default: [] },
   notifyUserId: { type: String },
-  logChannelId: { type: String },
   joinedAt: { type: Date, default: Date.now },
   lastSyncAt: { type: Date },
   lastApiCallAt: { type: Date }

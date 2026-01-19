@@ -22,7 +22,6 @@ export async function handleAdminSyncCommand(interaction: ChatInputCommandIntera
     switch (subcommand) {
       case 'now': await handleSyncNow(interaction, guildId); break;
       case 'status': await handleSyncStatus(interaction, guildId); break;
-      case 'channel': await handleSyncChannel(interaction, guildId); break;
       default: await interaction.editReply('🔴 Unknown subcommand.');
     }
   } catch (error) {
@@ -73,17 +72,7 @@ async function handleSyncStatus(interaction: ChatInputCommandInteraction, guildI
     .setColor(EMBED_COLORS.INFO)
     .addFields(
       { name: 'Managed Roles', value: guild?.managedRoleIds.length ? `${guild.managedRoleIds.length} roles` : 'None', inline: true },
-      { name: 'Last Sync', value: guild?.lastSyncAt ? `<t:${Math.floor(guild.lastSyncAt.getTime() / 1000)}:R>` : 'Never', inline: true },
-      { name: 'Log Channel', value: guild?.logChannelId ? `<#${guild.logChannelId}>` : 'Not set', inline: false }
+      { name: 'Last Sync', value: guild?.lastSyncAt ? `<t:${Math.floor(guild.lastSyncAt.getTime() / 1000)}:R>` : 'Never', inline: true }
     );
   await interaction.editReply({ embeds: [embed] });
-}
-
-/**
- * 配置日志频道
- */
-async function handleSyncChannel(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
-  const channel = interaction.options.getChannel('channel', true);
-  await Guild.updateOne({ guildId }, { logChannelId: channel.id });
-  await interaction.editReply(`✅ Sync logs will now be sent to <#${channel.id}>.`);
 }
