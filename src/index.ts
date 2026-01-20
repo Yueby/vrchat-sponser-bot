@@ -40,8 +40,7 @@ async function main(): Promise<void> {
         }
       });
       
-      // 4. Perform Health Check
-      await performStartupHealthCheck();
+
     } else {
       logger.warn('Skipping Discord login in development mode (No Token provided)');
     }
@@ -61,23 +60,6 @@ async function main(): Promise<void> {
   }
 }
 
-/**
- * 启动后健康检查
- * 验证所有关键服务正常运行
- */
-async function performStartupHealthCheck(): Promise<void> {
-  const isDev = process.env.NODE_ENV === 'development';
-
-  // 检查数据库连接
-  if (mongoose.connection.readyState !== 1) {
-    throw new Error('Database not connected');
-  }
-  
-  // 检查 Discord 连接 (非开发模式)
-  if (!isDev && !client.isReady()) {
-    throw new Error('Discord client not ready');
-  }
-}
 
 // 🔧 全局错误处理：未捕获的异常
 process.on('uncaughtException', (error) => {
@@ -95,22 +77,8 @@ process.on('unhandledRejection', (reason, promise) => {
   // 不立即退出，给 Bot 继续运行的机会
 });
 
-// 🔧 监控进程退出
-process.on('exit', (code) => {
-  logger.warn(`Process exiting with code: ${code}`);
-});
-
-// 🔧 其他信号
-process.on('SIGHUP', () => {
-  logger.warn('Received SIGHUP signal');
-});
-
-process.on('SIGQUIT', () => {
-  logger.warn('Received SIGQUIT signal');
-});
-
-// 🔧 优雅关闭：统一处理函数
-async function gracefulShutdown(signal: string): Promise<void> {
+// 🔧 优雅关闭处理
+const handleShutdown = async (signal: string) => {
   logger.info(`Received ${signal}, shutting down gracefully...`);
   try {
     await client.destroy();
@@ -120,18 +88,11 @@ async function gracefulShutdown(signal: string): Promise<void> {
     logger.error('Error during shutdown:', error);
     process.exit(1);
   }
-}
+};
 
-// 🔧 优雅关闭：处理 SIGINT (Ctrl+C)
-process.on('SIGINT', async () => {
-  if (process.env.NODE_ENV === 'development') {
-    console.trace();
-  }
-  await gracefulShutdown('SIGINT');
-});
+process.on('SIGINT', () => handleShutdown('SIGINT'));
+process.on('SIGTERM', () => handleShutdown('SIGTERM'));
 
-// 🔧 优雅关闭：处理 SIGTERM
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 main().catch((error) => {
   logger.error('Fatal error during startup:', error);

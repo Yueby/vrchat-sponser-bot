@@ -1,11 +1,11 @@
 import { Client, GatewayIntentBits, Interaction, Options } from 'discord.js';
 import mongoose from 'mongoose';
-import { MONITORING } from './config/constants';
+import { AVATAR_SIZES, EMBED_COLORS } from './config/constants';
 import { handleCommand } from './handlers/commandHandler';
 import { handleGuildCreate, handleGuildDelete } from './handlers/guildEvents';
 import { handleMemberAdd, handleMemberRemove, handleMemberUpdate } from './handlers/memberEvents';
 import { logger } from './utils/logger';
-import { startMemoryMonitor } from './utils/memory';
+
 
 // 🚀 内存优化：配置缓存管理器和清理策略
 export const client: Client = new Client({
@@ -57,10 +57,7 @@ client.once('clientReady', async () => {
   logger.info('[Ready]');
   logger.info('Waiting for guild owners to configure managed roles via /server roles');
   
-  // 🚀 启动内存监控
-  logger.info('');
-  logger.info('[Memory Monitor]');
-  startMemoryMonitor(MONITORING.MEMORY_CHECK_INTERVAL);
+
 });
 
 // Bot 加入新服务器

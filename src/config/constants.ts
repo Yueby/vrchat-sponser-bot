@@ -67,12 +67,3 @@ export const DISCORD_LIMITS = {
   EMBED_TOTAL_MAX: 6000         // Embed 总字符数限制
 } as const;
 
-/**
- * 监控配置
- */
-export const MONITORING = {
-  MEMORY_CHECK_INTERVAL: Number(process.env.MEMORY_CHECK_MINUTES) || 15, // 默认 15 分钟
-  ENABLE_STARTUP_REPORT: process.env.ENABLE_STARTUP_REPORT === 'true', // 默认关闭
-  MEMORY_WARNING_THRESHOLD: 200, // MB
-  MEMORY_CRITICAL_THRESHOLD: 250 // MB
-} as const;
