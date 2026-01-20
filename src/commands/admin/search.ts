@@ -94,7 +94,13 @@ export async function handleAdminSearchCommand(interaction: ChatInputCommandInte
         inline: false
       });
     });
-
+    
+    embed.addFields({
+      name: '🔗 Management Dashboard',
+      value: `[Manage all sponsors online](http://${process.env.DOMAIN || 'localhost'}/dashboard/${guildId})`,
+      inline: false
+    });
+    
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     await handleCommandError(interaction, error);

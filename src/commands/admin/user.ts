@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags, ButtonInteraction, Interaction, ModalSubmitInteraction, RepliableInteraction } from 'discord.js';
 import User from '../../models/User';
 import VRChatBinding from '../../models/VRChatBinding';
 import { EMBED_COLORS } from '../../config/constants';
@@ -97,18 +97,37 @@ async function handleUserList(interaction: ChatInputCommandInteraction, guildId:
 /**
  * /admin user remove - 删除用户
  */
-async function handleUserRemove(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
-  const userId = interaction.options.getString('user_id', true);
+export async function handleAdminUserDelete(
+  interaction: ChatInputCommandInteraction | ButtonInteraction | ModalSubmitInteraction, 
+  guildId: string,
+  targetUserId?: string
+): Promise<void> {
+  const userId = targetUserId || (interaction.isChatInputCommand() ? interaction.options.getString('user_id', true) : null);
+  
+  if (!userId) {
+    if (interaction.isRepliable()) {
+      await interaction.editReply('🔴 User ID is required.');
+    }
+    return;
+  }
+
+  if (interaction.isRepliable() && !interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true });
+  }
   
   const result = await User.findOneAndDelete({ userId, guildId });
   if (!result) {
-    await interaction.editReply(`🔴 User with ID \`${userId}\` not found.`);
+    if (interaction.isRepliable()) {
+      await interaction.editReply(`🔴 User with ID \`${userId}\` not found.`);
+    }
     return;
   }
 
   await VRChatBinding.deleteOne({ userId, guildId });
 
-  await interaction.editReply(`✅ Successfully removed user **${result.displayName || userId}**.`);
+  if (interaction.isRepliable()) {
+    await interaction.editReply(`✅ Successfully removed user **${result.displayName || userId}**.`);
+  }
   logger.info(`Admin ${interaction.user.username} removed user ${userId}`);
 }
 
@@ -194,17 +213,123 @@ export async function handleAdminUserCommand(interaction: ChatInputCommandIntera
   if (!requireAdmin(interaction)) return;
 
   const subcommand = interaction.options.getSubcommand();
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     switch (subcommand) {
-      case 'add': await handleUserAdd(interaction, guildId); break;
-      case 'update': await handleUserUpdate(interaction, guildId); break;
-      case 'list': await handleUserList(interaction, guildId); break;
-      case 'remove': await handleUserRemove(interaction, guildId); break;
-      default: await interaction.editReply('🔴 Unknown subcommand.');
+      case 'add': 
+        await interaction.deferReply({ ephemeral: true });
+        await handleUserAdd(interaction, guildId); 
+        break;
+      case 'update': 
+        await interaction.deferReply({ ephemeral: true });
+        await handleAdminUserUpdate(interaction, guildId); 
+        break;
+      case 'list': 
+        await interaction.deferReply({ ephemeral: true });
+        await handleUserList(interaction, guildId); 
+        break;
+      case 'remove': 
+        await handleAdminUserDelete(interaction, guildId); 
+        break;
+      default: 
+        await interaction.deferReply({ ephemeral: true });
+        await interaction.editReply('🔴 Unknown subcommand.');
     }
   } catch (error) {
     await handleCommandError(interaction, error);
   }
+}
+
+/**
+ * 更新用户信息的导出版本
+ */
+export async function handleAdminUserUpdate(
+  interaction: ChatInputCommandInteraction | ButtonInteraction | ModalSubmitInteraction,
+  guildId: string,
+  data?: {
+    userId: string;
+    vrchatName?: string;
+    roles?: string;
+    externalName?: string;
+    notes?: string;
+  }
+): Promise<void> {
+  const userId = data?.userId || (interaction.isChatInputCommand() ? interaction.options.getString('user_id', true) : null);
+  if (!userId) return;
+
+  if (interaction.isRepliable() && !interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true });
+  }
+
+  const newVrchatName = data?.vrchatName || (interaction.isChatInputCommand() ? interaction.options.getString('vrchat_name') : null);
+  const rolesString = data?.roles || (interaction.isChatInputCommand() ? interaction.options.getString('roles') : null);
+  const externalName = data?.externalName || (interaction.isChatInputCommand() ? interaction.options.getString('external_name') : null);
+  const notes = data?.notes !== undefined ? data.notes : (interaction.isChatInputCommand() ? interaction.options.getString('notes') : null);
+
+  const user = await User.findOne({ userId, guildId });
+  if (!user) {
+    if (interaction.isRepliable()) {
+      await interaction.editReply(`🔴 User with ID \`${userId}\` not found.`);
+    }
+    return;
+  }
+
+  const updates: any = { updatedAt: new Date() };
+  const bindUpdates: any = { bindTime: new Date() };
+  const auditLogs = [];
+
+  if (rolesString) {
+    updates.roles = parseRoles(rolesString);
+    auditLogs.push(`Roles: **${updates.roles.join(', ')}**`);
+  }
+
+  if (externalName) {
+    updates.displayName = externalName;
+    auditLogs.push(`Display Name: **${externalName}**`);
+  }
+
+  if (notes !== null && notes !== undefined) {
+    updates.notes = notes || undefined;
+    auditLogs.push(`Notes: **${notes || 'Cleared'}**`);
+  }
+
+  if (newVrchatName) {
+    const cleanName = sanitizeVRChatName(newVrchatName);
+    const validation = validateVRChatName(cleanName);
+    if (!validation.valid) {
+      if (interaction.isRepliable()) {
+        await interaction.editReply(`🔴 ${validation.error}`);
+      }
+      return;
+    }
+    
+    // 更新绑定
+    const existingBinding = await VRChatBinding.findOne({ userId, guildId });
+    if (existingBinding) {
+      if (existingBinding.vrchatName !== cleanName) {
+        bindUpdates.vrchatName = cleanName;
+        bindUpdates.$push = { nameHistory: { name: existingBinding.vrchatName, changedAt: new Date() } };
+      }
+    } else {
+      await VRChatBinding.create({ userId, guildId, vrchatName: cleanName, firstBindTime: new Date(), bindTime: new Date() });
+    }
+    auditLogs.push(`VRChat Name: **${cleanName}**`);
+  }
+
+  await User.updateOne({ userId, guildId }, { $set: updates });
+  if (bindUpdates.vrchatName || bindUpdates.$push) {
+    await VRChatBinding.updateOne({ userId, guildId }, bindUpdates);
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle('User Updated')
+    .setDescription(`Successfully updated settings for **${user.displayName || userId}**.`)
+    .addFields({ name: 'Changes', value: auditLogs.length > 0 ? auditLogs.join('\n') : 'No changes' })
+    .setColor(EMBED_COLORS.SUCCESS)
+    .setTimestamp();
+
+  if (interaction.isRepliable()) {
+    await interaction.editReply({ embeds: [embed] });
+  }
+  logger.info(`Admin ${interaction.user.username} updated user ${userId}`);
 }

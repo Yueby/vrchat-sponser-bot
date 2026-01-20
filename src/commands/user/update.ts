@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, ModalSubmitInteraction, ButtonInteraction } from 'discord.js';
 import User from '../../models/User';
 import VRChatBinding from '../../models/VRChatBinding';
 import { getMemberRoleIds, isMemberBooster } from '../../utils/discord';
@@ -6,16 +6,32 @@ import { sanitizeVRChatName, validateVRChatName } from '../../utils/validation';
 import { logger } from '../../utils/logger';
 
 /**
- * /user update - 全能更新入口
+ * 更新用户资料逻辑
  */
-export async function handleUserUpdate(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
-  const newVrchatName = interaction.options.getString('vrchat_name');
-  const avatarUrl = interaction.options.getString('avatar_url');
+export async function handleUserUpdate(
+  interaction: ChatInputCommandInteraction | ModalSubmitInteraction | ButtonInteraction, 
+  guildId: string,
+  vrchatName?: string,
+  avatarUrl?: string
+): Promise<void> {
+  // 如果是斜杠命令，从 options 中获取参数
+  const newVrchatName = vrchatName || (interaction.isChatInputCommand() ? interaction.options.getString('vrchat_name') : null);
+  const newAvatarUrl = avatarUrl || (interaction.isChatInputCommand() ? interaction.options.getString('avatar_url') : null);
   const userId = interaction.user.id;
   
-  if (!newVrchatName && !avatarUrl) {
-    await interaction.editReply('🔴 Please provide at least one option to update (vrchat_name or avatar_url).');
+  if (!newVrchatName && !newAvatarUrl) {
+    const errorMsg = '🔴 Please provide at least one option to update.';
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(errorMsg);
+    } else {
+      await interaction.reply({ content: errorMsg, ephemeral: true });
+    }
     return;
+  }
+
+  // 统一确保 deferReply
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true });
   }
 
   const member = interaction.guild!.members.cache.get(userId);
@@ -67,12 +83,12 @@ export async function handleUserUpdate(interaction: ChatInputCommandInteraction,
   }
 
   // 3. 处理头像更新
-  if (avatarUrl) {
-    if (!/^https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp)(?:\?.*)?$/i.test(avatarUrl)) {
+  if (newAvatarUrl) {
+    if (!/^https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp)(?:\?.*)?$/i.test(newAvatarUrl)) {
       await interaction.editReply('🔴 Invalid avatar URL format.');
       return;
     }
-    await User.updateOne({ userId, guildId }, { $set: { avatarUrl } });
+    await User.updateOne({ userId, guildId }, { $set: { avatarUrl: newAvatarUrl } });
     updates.push('custom avatar');
   }
 

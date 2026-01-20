@@ -9,6 +9,7 @@ export interface IGuild extends Document {
   joinedAt: Date;               // Bot 加入时间
   lastSyncAt?: Date;            // 最后同步时间
   lastApiCallAt?: Date;         // 最后 API 调用时间
+  isSyncing?: boolean;          // 是否正在同步中
 }
 
 const GuildSchema: Schema = new Schema({
@@ -19,7 +20,8 @@ const GuildSchema: Schema = new Schema({
   notifyUserId: { type: String },
   joinedAt: { type: Date, default: Date.now },
   lastSyncAt: { type: Date },
-  lastApiCallAt: { type: Date }
+  lastApiCallAt: { type: Date },
+  isSyncing: { type: Boolean, default: false }
 });
 
 export default model<IGuild>('Guild', GuildSchema);

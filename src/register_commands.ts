@@ -1,4 +1,4 @@
-import { REST, Routes, SlashCommandBuilder } from 'discord.js';
+import { REST, Routes, SlashCommandBuilder, ContextMenuCommandBuilder, ApplicationCommandType } from 'discord.js';
 import * as dotenv from 'dotenv';
 import { logger } from './utils/logger';
 
@@ -12,30 +12,25 @@ if (!DISCORD_TOKEN || !CLIENT_ID) {
 }
 
 const commands = [
-  // 1. 全能用户指令集 (/user)
+  // 1. 快捷个人资料 (/me)
   new SlashCommandBuilder()
-    .setName('user')
-    .setDescription('Personal profile and settings')
-    .addSubcommand(sub =>
-      sub.setName('me')
-        .setDescription('View your profile cards and sponsorship status')
-    )
-    .addSubcommand(sub =>
-      sub.setName('update')
-        .setDescription('Update your VRChat name or custom avatar')
-        .addStringOption(opt =>
-          opt.setName('vrchat_name')
-            .setDescription('New VRChat display name')
-            .setRequired(false))
-        .addStringOption(opt =>
-          opt.setName('avatar_url')
-            .setDescription('Direct link to a custom avatar image')
-            .setRequired(false))
-    )
-    .addSubcommand(sub =>
-      sub.setName('history')
-        .setDescription('View your VRChat name change history')
-    ),
+    .setName('me')
+    .setDescription('Quickly view your profile cards and sponsorship status'),
+
+  // 2. 快捷绑定 (/bind)
+  new SlashCommandBuilder()
+    .setName('bind')
+    .setDescription('Quickly update your VRChat name or custom avatar'),
+
+  // 3. 上下文菜单：查看成员资料
+  new ContextMenuCommandBuilder()
+    .setName('View VRChat Profile')
+    .setType(ApplicationCommandType.User),
+
+  // 4. 上下文菜单：管理员管理
+  new ContextMenuCommandBuilder()
+    .setName('Manage Sponsor')
+    .setType(ApplicationCommandType.User),
 
   // 2. 统合管理指令集 (/admin)
   new SlashCommandBuilder()
@@ -62,7 +57,7 @@ const commands = [
         .addSubcommand(sub =>
           sub.setName('update')
             .setDescription('Update an existing user (Discord or Manual)')
-            .addStringOption(opt => opt.setName('user_id').setDescription('The ID of the user to update').setRequired(true))
+            .addStringOption(opt => opt.setName('user_id').setDescription('The ID of the user to update').setRequired(true).setAutocomplete(true))
             .addStringOption(opt => opt.setName('vrchat_name').setDescription('New VRChat Name').setRequired(false))
             .addStringOption(opt => opt.setName('roles').setDescription('New comma-separated roles').setRequired(false))
             .addStringOption(opt => opt.setName('external_name').setDescription('New manual display name').setRequired(false))
@@ -71,41 +66,18 @@ const commands = [
         .addSubcommand(sub =>
           sub.setName('remove')
             .setDescription('Remove a user')
-            .addStringOption(opt => opt.setName('user_id').setDescription('User ID to remove').setRequired(true))
+            .addStringOption(opt => opt.setName('user_id').setDescription('User ID to remove').setRequired(true).setAutocomplete(true))
         )
     )
     // 维护指令
-    .addSubcommand(sub => sub.setName('search').setDescription('Search for any user').addStringOption(opt => opt.setName('type').setDescription('Search type').setRequired(true).addChoices({ name: 'VRChat Name', value: 'vrchat' }, { name: 'Discord ID', value: 'discord' }, { name: 'Role', value: 'role' })).addStringOption(opt => opt.setName('value').setDescription('Value to search for').setRequired(true)))
+    .addSubcommand(sub => sub.setName('search').setDescription('Search for any user').addStringOption(opt => opt.setName('type').setDescription('Search type').setRequired(true).addChoices({ name: 'VRChat Name', value: 'vrchat' }, { name: 'Discord ID', value: 'discord' }, { name: 'Role', value: 'role' })).addStringOption(opt => opt.setName('value').setDescription('Value to search for').setRequired(true).setAutocomplete(true)))
     .addSubcommand(sub => sub.setName('refresh').setDescription('Force refresh data cache'))
     .addSubcommand(sub => sub.setName('unbound').setDescription('List sponsors without VRChat binding')),
 
-  // 3. 服务器配置指令集 (/server)
+  // 3. 服务器配置指令集 (/server) - 单入口交互面板
   new SlashCommandBuilder()
     .setName('server')
-    .setDescription('Server core settings')
-    .addSubcommandGroup(group =>
-      group.setName('sync')
-        .setDescription('Sync settings and actions')
-        .addSubcommand(sub => sub.setName('now').setDescription('Trigger manual synchronization now'))
-        .addSubcommand(sub => sub.setName('status').setDescription('View sync status'))
-    )
-    .addSubcommandGroup(group =>
-      group.setName('roles')
-        .setDescription('Managed roles settings')
-        .addSubcommand(sub => sub.setName('add').setDescription('Add a role to manage').addRoleOption(opt => opt.setName('role').setDescription('Role to manage').setRequired(true)))
-        .addSubcommand(sub => sub.setName('list').setDescription('List all managed roles'))
-    )
-    .addSubcommandGroup(group =>
-      group.setName('api')
-        .setDescription('Web API settings')
-        .addSubcommand(sub => sub.setName('toggle').setDescription('Enable/Disable Web API Access'))
-        .addSubcommand(sub => sub.setName('status').setDescription('View API status and key'))
-    )
-    .addSubcommand(sub =>
-      sub.setName('notify')
-        .setDescription('Set a user to receive name change notifications')
-        .addUserOption(opt => opt.setName('user').setDescription('User to notify (leave empty to clear)').setRequired(false))
-    )
+    .setDescription('Open the server management and settings panel'),
 ].map(command => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(DISCORD_TOKEN);

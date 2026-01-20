@@ -1,13 +1,12 @@
 import { ChatInputCommandInteraction } from 'discord.js';
-import { handleAdminApiCommand } from '../commands/server/api';
-import { handleAdminRolesCommand } from '../commands/server/roles';
-import { handleAdminSyncCommand } from '../commands/server/sync';
 import { handleAdminRefreshCommand } from '../commands/admin/refresh';
 import { handleAdminSearchCommand } from '../commands/admin/search';
 import { handleAdminUnboundCommand } from '../commands/admin/unbound';
 import { handleAdminUserCommand } from '../commands/admin/user';
-import { handleUserCommand } from '../commands/user/index';
-import { handleServerNotify } from '../commands/server/notify';
+import { handleUserProfile } from '../commands/user/me';
+import { handleServerSettings } from '../commands/server/settings';
+import { showBindModal } from './interactionHandler';
+import { requireGuild } from '../utils/errors';
 import { logger } from '../utils/logger';
 
 /**
@@ -18,26 +17,19 @@ export async function handleCommand(interaction: ChatInputCommandInteraction): P
 
   try {
     switch (commandName) {
-      // 统合后的用户指令集
-      case 'user':
-        await handleUserCommand(interaction);
+
+      case 'me':
+        const meGuildId = requireGuild(interaction);
+        if (meGuildId) await handleUserProfile(interaction, meGuildId);
         break;
 
-      // 服务器管理指令集
+      case 'bind':
+        await showBindModal(interaction);
+        break;
+
+      // 服务器管理指令集 (改为单入口交互面板)
       case 'server':
-        const serverSubcommandGroup = interaction.options.getSubcommandGroup();
-        if (serverSubcommandGroup === 'sync') {
-          await handleAdminSyncCommand(interaction);
-        } else if (serverSubcommandGroup === 'roles') {
-          await handleAdminRolesCommand(interaction);
-        } else if (serverSubcommandGroup === 'api') {
-          await handleAdminApiCommand(interaction);
-        } else {
-          const serverSubcommand = interaction.options.getSubcommand();
-          if (serverSubcommand === 'notify') {
-            await handleServerNotify(interaction);
-          }
-        }
+        await handleServerSettings(interaction);
         break;
 
       // 管理员维护指令集

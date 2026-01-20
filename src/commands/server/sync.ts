@@ -1,5 +1,4 @@
-// /server sync 命令处理
-import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags, ButtonInteraction, ModalSubmitInteraction, RepliableInteraction } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { getMembersWithRoles } from '../../utils/binding';
@@ -10,19 +9,28 @@ import { logger } from '../../utils/logger';
 /**
  * 路由器
  */
-export async function handleAdminSyncCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function handleAdminSyncCommand(
+  interaction: ChatInputCommandInteraction | ButtonInteraction,
+  action?: 'now' | 'status'
+): Promise<void> {
   const guildId = requireGuild(interaction);
   if (!guildId) return;
   if (!requireAdmin(interaction)) return;
 
-  const subcommand = interaction.options.getSubcommand();
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  const subcommand = action || (interaction.isChatInputCommand() ? interaction.options.getSubcommand() : null);
+  
+  if (interaction.isRepliable() && !interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true });
+  }
 
   try {
     switch (subcommand) {
       case 'now': await handleSyncNow(interaction, guildId); break;
       case 'status': await handleSyncStatus(interaction, guildId); break;
-      default: await interaction.editReply('🔴 Unknown subcommand.');
+      default: 
+        if (interaction.isRepliable()) {
+          await interaction.editReply('🔴 Unknown action.');
+        }
     }
   } catch (error) {
     await handleCommandError(interaction, error);
@@ -32,7 +40,7 @@ export async function handleAdminSyncCommand(interaction: ChatInputCommandIntera
 /**
  * 立即执行同步
  */
-async function handleSyncNow(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
+async function handleSyncNow(interaction: RepliableInteraction, guildId: string): Promise<void> {
   const startTime = Date.now();
   const guild = await Guild.findOne({ guildId });
   if (!guild || guild.managedRoleIds.length === 0) {
@@ -65,7 +73,7 @@ async function handleSyncNow(interaction: ChatInputCommandInteraction, guildId: 
 /**
  * 查看同步状态
  */
-async function handleSyncStatus(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
+async function handleSyncStatus(interaction: RepliableInteraction, guildId: string): Promise<void> {
   const guild = await Guild.findOne({ guildId });
   const embed = new EmbedBuilder()
     .setTitle('Sync Status')

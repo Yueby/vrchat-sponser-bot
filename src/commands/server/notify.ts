@@ -1,11 +1,14 @@
 // /server notify 命令处理 - 配置通知目标用户
-import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags, ModalSubmitInteraction, RepliableInteraction } from 'discord.js';
 import { AVATAR_SIZES, EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { handleCommandError, requireGuild, requireOwner } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 
-export async function handleServerNotify(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function handleServerNotify(
+  interaction: ChatInputCommandInteraction | ModalSubmitInteraction,
+  userId?: string
+): Promise<void> {
   const guildId = requireGuild(interaction);
   if (!guildId) return;
 
@@ -13,12 +16,21 @@ export async function handleServerNotify(interaction: ChatInputCommandInteractio
   const hasPermission = await requireOwner(interaction);
   if (!hasPermission) return;
 
-  const targetUser = interaction.options.getUser('user', false);
-
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  // 如果传了 userId 则直接用，否则从交互选项中取
+  const targetUserId = userId || (interaction.isChatInputCommand() ? interaction.options.getUser('user')?.id : null);
+  
+  if (interaction.isRepliable() && !interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true });
+  }
 
   try {
-    if (targetUser) {
+    if (targetUserId) {
+      const targetUser = await interaction.client.users.fetch(targetUserId).catch(() => null);
+      if (!targetUser) {
+        await interaction.editReply('🔴 Could not find the specified user.');
+        return;
+      }
+
       // 设置通知用户
       await Guild.updateOne(
         { guildId },

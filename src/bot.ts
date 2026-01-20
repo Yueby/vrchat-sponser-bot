@@ -2,6 +2,7 @@ import { Client, GatewayIntentBits, Interaction, Options } from 'discord.js';
 import mongoose from 'mongoose';
 import { AVATAR_SIZES, EMBED_COLORS } from './config/constants';
 import { handleCommand } from './handlers/commandHandler';
+import { handleInteraction } from './handlers/interactionHandler';
 import { handleGuildCreate, handleGuildDelete } from './handlers/guildEvents';
 import { handleMemberAdd, handleMemberRemove, handleMemberUpdate } from './handlers/memberEvents';
 import { logger } from './utils/logger';
@@ -75,10 +76,15 @@ client.on('guildMemberUpdate', handleMemberUpdate);
 // 成员离开服务器
 client.on('guildMemberRemove', handleMemberRemove);
 
-// 处理斜杠命令
+// 处理所有交互
 client.on('interactionCreate', async (interaction: Interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-  await handleCommand(interaction);
+  // 分发所有类型的交互
+  await handleInteraction(interaction);
+  
+  // 如果是斜杠命令，继续调用现有的分发器（过渡期）
+  if (interaction.isChatInputCommand()) {
+    await handleCommand(interaction);
+  }
 });
 
 // 🔧 错误处理：捕获 Discord.js 错误

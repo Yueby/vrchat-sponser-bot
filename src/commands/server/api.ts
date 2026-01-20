@@ -1,5 +1,4 @@
-// /server api 命令处理
-import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from 'discord.js';
+import { ChatInputCommandInteraction, EmbedBuilder, MessageFlags, ButtonInteraction, RepliableInteraction } from 'discord.js';
 import { EMBED_COLORS } from '../../config/constants';
 import Guild from '../../models/Guild';
 import { handleCommandError, requireGuild, requireOwner } from '../../utils/errors';
@@ -7,14 +6,21 @@ import { handleCommandError, requireGuild, requireOwner } from '../../utils/erro
 /**
  * /server api - 统筹管理 Web API 访问配置
  */
-export async function handleAdminApiCommand(interaction: ChatInputCommandInteraction): Promise<void> {
+export async function handleAdminApiCommand(
+  interaction: ChatInputCommandInteraction | ButtonInteraction,
+  action?: 'toggle' | 'status'
+): Promise<void> {
   const guildId = requireGuild(interaction);
   if (!guildId) return;
 
   if (!await requireOwner(interaction)) return;
 
-  const subcommand = interaction.options.getSubcommand();
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  const subcommand = action || (interaction.isChatInputCommand() ? interaction.options.getSubcommand() : null);
+  
+  if (interaction.isRepliable() && !interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true });
+  }
+
 
   try {
     const guild = await Guild.findOne({ guildId });
@@ -25,7 +31,9 @@ export async function handleAdminApiCommand(interaction: ChatInputCommandInterac
       guild.apiEnabled = newState;
       await guild.save();
       
-      await interaction.editReply(`✅ API access is now **${newState ? 'ENABLED' : 'DISABLED'}**.`);
+      if (interaction.isRepliable()) {
+        await interaction.editReply(`✅ API access is now **${newState ? 'ENABLED' : 'DISABLED'}**.`);
+      }
     } else if (subcommand === 'status') {
       const embed = new EmbedBuilder()
         .setTitle('Web API Status')
@@ -35,7 +43,9 @@ export async function handleAdminApiCommand(interaction: ChatInputCommandInterac
           { name: 'Endpoint', value: `\`http://${process.env.DOMAIN || 'localhost'}/api/vrchat/sponsors/${guildId}\``, inline: false },
           { name: 'Dashboard', value: `[View Online](http://${process.env.DOMAIN || 'localhost'}/dashboard/${guildId})`, inline: false }
         );
-      await interaction.editReply({ embeds: [embed] });
+      if (interaction.isRepliable()) {
+        await interaction.editReply({ embeds: [embed] });
+      }
     }
   } catch (error) {
     await handleCommandError(interaction, error);

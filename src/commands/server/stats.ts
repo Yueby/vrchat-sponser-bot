@@ -66,6 +66,11 @@ export async function handleServerStats(interaction: ChatInputCommandInteraction
           name: 'Timeline', 
           value: `Joined: <t:${Math.floor(guild.joinedAt.getTime() / 1000)}:D>\nLast Sync: ${guild.lastSyncAt ? `<t:${Math.floor(guild.lastSyncAt.getTime() / 1000)}:R>` : 'Never'}`,
           inline: false 
+        },
+        {
+          name: '🔗 Dashboard',
+          value: `[View Online Dashboard](http://${process.env.DOMAIN || 'localhost'}/dashboard/${guildId})`,
+          inline: false
         }
       )
       .setTimestamp();

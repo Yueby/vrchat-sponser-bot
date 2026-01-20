@@ -1,6 +1,6 @@
 import { ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { handleCommandError, requireGuild } from '../../utils/errors';
-import { handleUserMe } from './me';
+import { handleUserProfile } from './me';
 import { handleUserUpdate } from './update';
 import { handleUserHistory } from './history';
 
@@ -12,11 +12,10 @@ export async function handleUserCommand(interaction: ChatInputCommandInteraction
   if (!guildId) return;
 
   const subcommand = interaction.options.getSubcommand();
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     switch (subcommand) {
-      case 'me': await handleUserMe(interaction, guildId); break;
+      case 'me': await handleUserProfile(interaction, guildId); break;
       case 'update': await handleUserUpdate(interaction, guildId); break;
       case 'history': await handleUserHistory(interaction, guildId); break;
       default: await interaction.editReply('🔴 Unknown subcommand.');

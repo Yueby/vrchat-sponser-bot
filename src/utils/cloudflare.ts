@@ -1,5 +1,17 @@
 import { logger } from './logger';
 
+interface CloudflareApiResponse {
+  success: boolean;
+  result: unknown;
+  errors: unknown[];
+}
+
+interface CloudflareSubdomainResponse extends CloudflareApiResponse {
+  result: {
+    subdomain: string;
+  };
+}
+
 /**
  * 自动检测当前部署平台的公网 URL
  * 基于各平台官方文档的环境变量（2026年1月15日验证）
@@ -88,7 +100,7 @@ async function getWorkersSubdomain(accountId: string, apiToken: string): Promise
     
     if (!response.ok) return null;
     
-    const data = await response.json() as any;
+    const data = await response.json() as CloudflareSubdomainResponse;
     return data.result?.subdomain || null;
   } catch (error) {
     return null;
@@ -162,7 +174,7 @@ export async function updateCloudflareWorker(): Promise<void> {
       throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
     
-    const result = await response.json() as any;
+    const result = await response.json() as CloudflareApiResponse;
     
     if (!result.success) {
       throw new Error(`API error: ${JSON.stringify(result.errors)}`);
