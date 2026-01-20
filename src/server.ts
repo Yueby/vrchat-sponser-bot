@@ -1,4 +1,5 @@
 import express from 'express';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
 import path from 'path';
@@ -11,8 +12,10 @@ import { SponsorData, SponsorsApiResponse } from './types/api';
 import { getDefaultAvatar } from './utils/external';
 import { apiCache } from './utils/cache';
 import { logger } from './utils/logger';
+import * as auth from './utils/auth';
 
 const app = express();
+app.use(cookieParser());
 app.use(express.static(path.join(process.cwd(), 'public')));
 app.set('trust proxy', 1);
 
@@ -48,6 +51,55 @@ app.get('/health', (req, res) => {
 });
 
 app.get('/', (req, res) => res.send('VRChat Sponsor Bot is running.'));
+
+// Auth Routes
+app.get('/api/auth/login', (req, res) => {
+  res.redirect(auth.getDiscordAuthUrl());
+});
+
+app.get('/api/auth/callback', async (req, res) => {
+  const { code } = req.query;
+  if (!code) return res.status(400).send('Missing code');
+
+  try {
+    const accessToken = await auth.exchangeCode(code as string);
+    const user = await auth.getDiscordUser(accessToken);
+    const token = auth.signToken({
+      id: user.id,
+      username: user.global_name || user.username,
+      avatar: user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png` : null
+    });
+
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: 'lax'
+    });
+
+    // 从 Cookie 或 State 中获取原始跳转地址（此处简化，直接回首页或 Dashboard）
+    res.redirect('/');
+  } catch (error) {
+    logger.error('Auth callback error:', error);
+    res.status(500).send('Authentication failed');
+  }
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const token = req.cookies.auth_token;
+  if (!token) return res.status(401).json({ error: 'Not authenticated' });
+
+  const user = auth.verifyToken(token);
+  if (!user) return res.status(401).json({ error: 'Invalid token' });
+
+  res.json(user);
+});
+
+app.get('/api/auth/logout', (req, res) => {
+  res.clearCookie('auth_token');
+  res.json({ success: true });
+});
+
 app.get('/dashboard/:guildId', (req, res) => res.sendFile(path.join(process.cwd(), 'public', 'dashboard.html')));
 app.get('/dashboard/:guildId/:userId', (req, res) => res.sendFile(path.join(process.cwd(), 'public', 'profile.html')));
 

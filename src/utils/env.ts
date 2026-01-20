@@ -6,7 +6,7 @@ import { logger } from './logger';
  */
 export function validateEnv(): void {
   const isDev = process.env.NODE_ENV === 'development';
-  const required = isDev ? ['MONGO_URI'] : ['DISCORD_TOKEN', 'CLIENT_ID', 'MONGO_URI'];
+  const required = isDev ? ['MONGO_URI', 'DISCORD_CLIENT_SECRET', 'JWT_SECRET'] : ['DISCORD_TOKEN', 'CLIENT_ID', 'MONGO_URI', 'DISCORD_CLIENT_SECRET', 'JWT_SECRET'];
   const optionalInDev = ['DISCORD_TOKEN', 'CLIENT_ID'];
   
   const missing = required.filter(key => !process.env[key]);

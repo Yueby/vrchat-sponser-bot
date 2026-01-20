@@ -23,10 +23,47 @@
         .back-link:hover {
             color: var(--text-primary);
         }
+        .auth-bar {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+        .user-chip {
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.1);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        .user-chip img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .login-btn {
+            background: #5865F2;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        .login-btn:hover { background: #4752C4; }
+        .logout-btn {
+            margin-left: 10px;
+            color: #ff4b4b;
+            cursor: pointer;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body class="dark-theme">
     <div class="container" style="max-width: 800px;">
+        <div id="auth-info" class="auth-bar"></div>
         <a href="" id="back-to-dashboard" class="back-link">
             <span>← Back to Dashboard</span>
         </a>
@@ -37,6 +74,32 @@
     </div>
 
     <script type="module">
+        async function checkAuth() {
+            const authInfo = document.getElementById('auth-info');
+            try {
+                const response = await fetch('/api/auth/me');
+                if (response.ok) {
+                    const user = await response.json();
+                    authInfo.innerHTML = `
+                        <div class="user-chip">
+                            <img src="${user.avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" alt="avatar">
+                            <span>${user.username}</span>
+                            <span class="logout-btn" onclick="logout()">Logout</span>
+                        </div>
+                    `;
+                    return true;
+                }
+            } catch (e) {}
+            
+            authInfo.innerHTML = `<a href="/api/auth/login" class="login-btn">Login with Discord</a>`;
+            return false;
+        }
+
+        window.logout = async function() {
+            await fetch('/api/auth/logout');
+            window.location.reload();
+        }
+
         async function loadProfile() {
             const pathParts = window.location.pathname.split('/');
             const userId = pathParts.pop();
@@ -45,6 +108,12 @@
             document.getElementById('back-to-dashboard').href = `/dashboard/${guildId}`;
             
             const container = document.getElementById('profile-container');
+
+            const isLoggedIn = await checkAuth();
+            if (!isLoggedIn) {
+                container.innerHTML = `<div class="empty">Please login to view profile.</div>`;
+                return;
+            }
 
             try {
                 const response = await fetch(`/api/vrchat/sponsors/${guildId}/${userId}`);
