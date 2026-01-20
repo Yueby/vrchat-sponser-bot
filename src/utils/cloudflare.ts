@@ -1,4 +1,5 @@
 import { logger } from './logger';
+import Guild from '../models/Guild';
 
 interface CloudflareApiResponse {
   success: boolean;
@@ -182,12 +183,29 @@ export async function updateCloudflareWorker(): Promise<void> {
     
     // 自动获取并显示 Worker URL
     const subdomain = await getWorkersSubdomain(CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN);
-    if (subdomain) {
-      const workerUrl = `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev`;
+    const domain = process.env.DOMAIN;
+    
+    // 确定最终显示的基准域名
+    const baseWorkerUrl = domain 
+      ? `https://${domain}` 
+      : (subdomain ? `https://${CLOUDFLARE_WORKER_NAME}.${subdomain}.workers.dev` : null);
+
+    if (baseWorkerUrl) {
       logger.success('Cloudflare Worker updated successfully!');
-      logger.info(`   Worker URL: ${workerUrl}`);
-      logger.info(`   API: ${workerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
-      logger.info(`   Health: ${workerUrl}/health`);
+      logger.info(`   Worker URL: ${baseWorkerUrl}`);
+      
+      // 列出所有已配置的服务器 API 地址
+      const activeGuilds = await Guild.find({ apiEnabled: true }, 'guildId').lean();
+      if (activeGuilds.length > 0) {
+        logger.info('   Active Server APIs:');
+        activeGuilds.forEach(g => {
+          logger.info(`     - ${g.guildId}: ${baseWorkerUrl}/api/vrchat/sponsors/${g.guildId}`);
+        });
+      } else {
+        logger.info(`   API Template: ${baseWorkerUrl}/api/vrchat/sponsors/YOUR_GUILD_ID`);
+      }
+      
+      logger.info(`   Health: ${baseWorkerUrl}/health`);
     } else {
       logger.success('Cloudflare Worker updated successfully!');
     }
