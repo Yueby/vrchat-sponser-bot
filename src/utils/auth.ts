@@ -6,6 +6,10 @@ const { PORT } = process.env;
 // 动态构建 Redirect URI，避免静态加载时 DOMAIN 未就绪
 const getRedirectUri = () => {
   const domain = process.env.DOMAIN;
+  // 本地开发模式下强制使用 localhost，避免 DOMAIN 变量导致 HTTPS 问题
+  if (process.env.NODE_ENV === 'development') {
+    return `http://localhost:${process.env.PORT || 3000}/api/auth/callback`;
+  }
   return domain 
   ? `https://${domain}/api/auth/callback` 
   : `http://localhost:${process.env.PORT || 3000}/api/auth/callback`;
