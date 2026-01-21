@@ -246,12 +246,9 @@ export async function performSyncNow(
     .setTimestamp();
 
   await interaction.editReply({ embeds: [embed] });
-  await interaction.editReply({ embeds: [embed] });
-  // @ts-ignore
-  import("../../utils/logger").then((m) =>
-    m.logger.info(
-      `Admin ${interaction.user.username} triggered manual sync in ${interaction.guild!.name}`,
-    ),
+
+  logger.info(
+    `Admin ${interaction.user.username} triggered manual sync in ${interaction.guild!.name}`,
   );
 }
 
