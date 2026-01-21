@@ -327,8 +327,6 @@ export async function handleViewUnbound(
 export async function showAddSponsorWizard(
   interaction: ButtonInteraction,
 ): Promise<void> {
-  // 使用原生 API 对象绕过 LabelBuilder 的 required 默认行为
-  // 这样我们可以为可选的 RoleSelect 设置 required: false
   await interaction.showModal({
     title: "Add Sponsor",
     custom_id: "wizard_submit",
@@ -356,12 +354,11 @@ export async function showAddSponsorWizard(
       {
         type: 18,
         label: "Roles",
-        required: false, // 关键：明确设置为 false 以支持 min_values=0
         component: {
           type: 6, // RoleSelect
           custom_id: "wizard_select_role",
-          placeholder: "Select Roles (Optional)",
-          min_values: 0,
+          placeholder: "Select at least 1 role",
+          min_values: 1,
           max_values: 5,
         },
       },
@@ -376,7 +373,7 @@ export async function showAddSponsorWizard(
         },
       },
     ],
-  } as any); // 使用 any 因为 discord.js 类型定义尚未完全支持 Select Menu in Modal
+  } as any);
 }
 
 /**
