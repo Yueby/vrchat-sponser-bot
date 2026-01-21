@@ -327,48 +327,56 @@ export async function handleViewUnbound(
 export async function showAddSponsorWizard(
   interaction: ButtonInteraction,
 ): Promise<void> {
-  const modal = new ModalBuilder()
-    .setCustomId("wizard_submit")
-    .setTitle("Add Sponsor");
-
-  const userSelect = new UserSelectMenuBuilder()
-    .setCustomId("wizard_select_user")
-    .setPlaceholder("Select a Discord User")
-    .setMaxValues(1);
-
-  const userLabel = new LabelBuilder()
-    .setLabel("Discord User")
-    .setUserSelectMenuComponent(userSelect);
-
-  const vrcInput = new TextInputBuilder()
-    .setCustomId("vrchat_name")
-    .setStyle(TextInputStyle.Short);
-
-  const vrcLabel = new LabelBuilder()
-    .setLabel("VRChat Name")
-    .setTextInputComponent(vrcInput);
-
-  const roleSelect = new RoleSelectMenuBuilder()
-    .setCustomId("wizard_select_role")
-    .setPlaceholder("Select Roles (Optional)")
-    .setMinValues(0)
-    .setMaxValues(5);
-
-  const roleLabel = new LabelBuilder()
-    .setLabel("Roles")
-    .setRoleSelectMenuComponent(roleSelect);
-
-  const notesInput = new TextInputBuilder()
-    .setCustomId("notes")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(false);
-
-  const notesLabel = new LabelBuilder()
-    .setLabel("Notes (Optional)")
-    .setTextInputComponent(notesInput);
-
-  modal.addLabelComponents(userLabel, vrcLabel, roleLabel, notesLabel);
-  await interaction.showModal(modal);
+  // 使用原生 API 对象绕过 LabelBuilder 的 required 默认行为
+  // 这样我们可以为可选的 RoleSelect 设置 required: false
+  await interaction.showModal({
+    title: "Add Sponsor",
+    custom_id: "wizard_submit",
+    components: [
+      {
+        type: 18, // Label Component
+        label: "Discord User",
+        component: {
+          type: 5, // UserSelect
+          custom_id: "wizard_select_user",
+          placeholder: "Select a Discord User",
+          max_values: 1,
+        },
+      },
+      {
+        type: 18,
+        label: "VRChat Name",
+        component: {
+          type: 4, // TextInput
+          custom_id: "vrchat_name",
+          style: 1, // Short
+          required: true,
+        },
+      },
+      {
+        type: 18,
+        label: "Roles",
+        required: false, // 关键：明确设置为 false 以支持 min_values=0
+        component: {
+          type: 6, // RoleSelect
+          custom_id: "wizard_select_role",
+          placeholder: "Select Roles (Optional)",
+          min_values: 0,
+          max_values: 5,
+        },
+      },
+      {
+        type: 18,
+        label: "Notes (Optional)",
+        component: {
+          type: 4, // TextInput
+          custom_id: "notes",
+          style: 1, // Short
+          required: false,
+        },
+      },
+    ],
+  } as any); // 使用 any 因为 discord.js 类型定义尚未完全支持 Select Menu in Modal
 }
 
 /**
