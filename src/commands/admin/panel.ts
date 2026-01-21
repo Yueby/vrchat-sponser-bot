@@ -327,53 +327,49 @@ export async function handleViewUnbound(
 export async function showAddSponsorWizard(
   interaction: ButtonInteraction,
 ): Promise<void> {
-  await interaction.showModal({
-    title: "Add Sponsor",
-    custom_id: "wizard_submit",
-    components: [
-      {
-        type: 18, // Label Component
-        label: "Discord User",
-        component: {
-          type: 5, // UserSelect
-          custom_id: "wizard_select_user",
-          placeholder: "Select a Discord User",
-          max_values: 1,
-        },
-      },
-      {
-        type: 18,
-        label: "VRChat Name",
-        component: {
-          type: 4, // TextInput
-          custom_id: "vrchat_name",
-          style: 1, // Short
-          required: true,
-        },
-      },
-      {
-        type: 18,
-        label: "Roles",
-        component: {
-          type: 6, // RoleSelect
-          custom_id: "wizard_select_role",
-          placeholder: "Select at least 1 role",
-          min_values: 1,
-          max_values: 5,
-        },
-      },
-      {
-        type: 18,
-        label: "Notes (Optional)",
-        component: {
-          type: 4, // TextInput
-          custom_id: "notes",
-          style: 1, // Short
-          required: false,
-        },
-      },
-    ],
-  } as any);
+  const modal = new ModalBuilder()
+    .setCustomId("wizard_submit")
+    .setTitle("Add Sponsor");
+
+  const userSelect = new UserSelectMenuBuilder()
+    .setCustomId("wizard_select_user")
+    .setPlaceholder("Select a Discord User")
+    .setMaxValues(1);
+
+  const userLabel = new LabelBuilder()
+    .setLabel("Discord User")
+    .setUserSelectMenuComponent(userSelect);
+
+  const vrcInput = new TextInputBuilder()
+    .setCustomId("vrchat_name")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const vrcLabel = new LabelBuilder()
+    .setLabel("VRChat Name")
+    .setTextInputComponent(vrcInput);
+
+  const roleSelect = new RoleSelectMenuBuilder()
+    .setCustomId("wizard_select_role")
+    .setPlaceholder("Select at least 1 role")
+    .setMinValues(1)
+    .setMaxValues(5);
+
+  const roleLabel = new LabelBuilder()
+    .setLabel("Roles")
+    .setRoleSelectMenuComponent(roleSelect);
+
+  const notesInput = new TextInputBuilder()
+    .setCustomId("notes")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false);
+
+  const notesLabel = new LabelBuilder()
+    .setLabel("Notes (Optional)")
+    .setTextInputComponent(notesInput);
+
+  modal.addLabelComponents(userLabel, vrcLabel, roleLabel, notesLabel);
+  await interaction.showModal(modal);
 }
 
 /**
