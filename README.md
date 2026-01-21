@@ -4,58 +4,41 @@
 
 ## ✨ 核心特性
 
-- 🛡️ **统合用户架构**：Discord 成员与外部赞助者（Manual）统合在单一模型下，标识一致，查询飞速
-- 🏢 **多服务器支持**：每个 Discord 服务器独立数据，完全隔离
-- 🎯 **基于角色管理**：服主配置要管理的角色，Bot 只追踪这些角色的成员
-- 🚀 **模块化重构**：指令逻辑分目录异步加载，性能极致优化，代码健壮
+- 🛡️ **统合用户架构**：Discord 成员与外部赞助者（Manual）统合在单一模型下，标识一致
+- 🏗️ **严格类型安全**：全项目 TypeScript 严格模式，零 `any`，健壮性极高
+- 🚀 **Discord.js v14+**：利用最新 API (Select Menu in Modals, LabelBuilder) 提供原生级交互体验
+- ⚡ **单消息 UI**：所有管理操作在同一条消息内原位更新，拒绝刷屏
 - 🌐 **RESTful API**：按服务器获取赞助者列表（VRChat DataDictionary 格式）
-- 📊 **Web Dashboard**：基于 Web Components 的精美深色系统计面板
 - 📜 **历史追踪**：自动记录 VRChat 名称变更历史
 - 🔔 **实时通知**：用户更新 VRChat 名字时自动通知管理员
 - 🔐 **访问控制**：服务器所有者可启用/禁用 API
-- ⚡ **限流保护**：180 次/分钟
+- 🛡️ **限流保护**：API 接口限流 180 次/分钟，保护服务器资源
 
 ---
 
 ## 🎮 命令列表
 
-### 1. 👤 个人用户指令 (`/user`)
+所有的管理功能都已集成到交互式面板中，无需记忆复杂的子命令。
 
-用户管理个人资料和设置的统一入口。
+### 1. 👤 个人用户指令 (`/me`)
 
-- `/user me` - 查看自己的赞助名片、身份状态及 VRChat 绑定信息
-- `/user update` - 更新自己的 VRChat 显示名或自定义头像链接
-- `/user history` - 查看自己的 VRChat 名称变更历史记录
+- `/me` - **个人中心**：查看赞助名片、绑定 VRChat 账号、设置头像或查看改名历史。所有操作均在卡片上通过按钮完成。
 
 ### 2. 🛠️ 管理维护指令 (`/admin`)
 
-管理员日常维护与数据管理的工具箱。
-
-- **用户管理 (`/admin user`)**：
-  - `/admin user add` - 智能添加赞助者（支持服务器成员链接或纯外部用户）
-  - `/admin user update` - 更新现有用户的 VRChat 名、角色、备注等
-  - `/admin user list` - 分类列出所有已登记的赞助者（Discord/Manual）
-  - `/admin user remove` - 通过 ID 彻底移除赞助者档案
-- **系统维护**：
-  - `/admin search` - 全局搜索用户信息（支持 VRChat 名、Discord ID、角色匹配）
-  - `/admin unbound` - 列出拥有赞助角色但尚未绑定 VRChat 名的成员
-  - `/admin refresh` - 立即清除当前服务器的 API 缓存
+- `/admin` - **管理员主面板**：
+  - **Add Sponsor**: 弹出添加向导，支持选择 Discord 成员或手动输入。
+  - **Search**: 搜索用户（支持 ID/名称）。
+  - **Check Unbound**: 查看未绑定 VRChat 的赞助者。
+  - **List All**: 查看完整赞助者列表。
 
 ### 3. ⚙️ 服务器配置指令 (`/server`)
 
-服务器所有者对 Bot 核心行为的全局配置。
-
-- **角色设置 (`/server roles`)**：
-  - `/server roles add` - 添加 Bot 追踪的赞助者角色
-  - `/server roles list` - 查看当前已管理的角色清单
-- **数据同步 (`/server sync`)**：
-  - `/server sync now` - 立即触发手动成员同步
-  - `/server sync status` - 查看同步状态及最后同步时间
-- **通知配置 (`/server notify`)**：
-  - `/server notify <user>` - 设置接收绑定变更提醒的管理员
-- **API 管理 (`/server api`)**：
-  - `/server api status` - 查看 API 密钥、状态及 Dashboard 链接
-  - `/server api toggle` - 开启或关闭 Web API 外部访问权限
+- `/server` - **服务器设置面板**：
+  - **Roles**: 管理 Bot 追踪的赞助者角色（添加/移除）。
+  - **Sync**: 查看同步状态或强制立即同步。
+  - **Notify**: 下拉选择接收通知的管理员。
+  - **API**: 一键开启/关闭 API 访问权限。
 
 ---
 
@@ -106,15 +89,6 @@
 - 包含服务器成员和外部用户
 - **响应缓存**：1 分钟（可通过 `/admin refresh` 手动刷新）
 - 速率限制：180 次/分钟
-
-### `GET /dashboard/:guildId` (NEW)
-
-**Web 可视化面板**，采用 Web Components 构建的响应式深色界面。
-
-- **功能**：展示服务器总赞助人数、角色分布及详细成员卡片。
-- **访问**：直接在浏览器输入该 URL 即可查看，无需登录。
-
----
 
 ## 🚀 快速开始
 
