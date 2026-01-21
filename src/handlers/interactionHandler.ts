@@ -22,11 +22,12 @@ export async function handleInteraction(interaction: Interaction): Promise<void>
     }
   } catch (error) {
     logger.error('Interaction Error:', error);
-    if (interaction.isRepliable()) {
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ content: '🔴 An error occurred while processing the interaction.' });
+    if ('reply' in interaction) {
+      const repliable = interaction as unknown as ButtonInteraction; // Cast to access reply/editReply safely or just rely on 'reply' in check but TS needs help
+      if (repliable.deferred || repliable.replied) {
+        await repliable.editReply({ content: '🔴 An error occurred while processing the interaction.' });
       } else {
-        await interaction.reply({ content: '🔴 An error occurred while processing the interaction.', ephemeral: true });
+        await repliable.reply({ content: '🔴 An error occurred while processing the interaction.', ephemeral: true });
       }
     }
   }

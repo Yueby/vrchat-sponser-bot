@@ -31,11 +31,7 @@ export async function handleAdminPanel(
   if (!guildId) return;
   if (!requireAdmin(interaction)) return;
 
-  if (
-    interaction.isRepliable() &&
-    !interaction.deferred &&
-    !interaction.replied
-  ) {
+  if (!interaction.deferred && !interaction.replied) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
@@ -84,12 +80,10 @@ export async function handleAdminPanel(
         .setStyle(ButtonStyle.Secondary),
     );
 
-    if (interaction.isRepliable()) {
-      await interaction.editReply({
-        embeds: [embed],
-        components: [row1, row2],
-      });
-    }
+    await interaction.editReply({
+      embeds: [embed],
+      components: [row1, row2],
+    });
   } catch (error) {
     await handleCommandError(interaction, error);
   }

@@ -120,9 +120,7 @@ export async function handleUserProfile(
       );
     }
 
-    if (interaction.isRepliable()) {
-      await interaction.editReply({ embeds: [embed], components: [row] });
-    }
+    await interaction.editReply({ embeds: [embed], components: [row] });
   } catch (error) {
     await handleCommandError(interaction, error);
   }
