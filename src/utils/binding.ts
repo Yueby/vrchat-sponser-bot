@@ -37,7 +37,9 @@ export async function getMembersWithRoles(
 ): Promise<GuildMember[]> {
   try {
     if (!roleIds || roleIds.length === 0) return [];
-    await guild.members.fetch();
+    // await guild.members.fetch(); // Disable force fetch to avoid Gateway Rate Limits (Opcode 8)
+    // We rely on Server Members Intent and Cache.
+    // Use /server sync or /admin refresh to force update if needed.
     const members = guild.members.cache.filter((member) => {
       if (member.user.bot) return false;
       return member.roles.cache.some((role) => roleIds.includes(role.id));

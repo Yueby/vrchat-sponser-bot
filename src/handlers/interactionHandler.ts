@@ -86,7 +86,7 @@ export async function handleInteraction(
       } else {
         await interaction.reply({
           content: "🔴 An error occurred while processing the interaction.",
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     }
@@ -282,6 +282,7 @@ async function showAdminManagePanel(
   await interaction.reply({
     embeds: [embed],
     components: [row],
-    ephemeral: true,
+    ephemeral: false, // Explicitly set to false or use flags if intended for ephemeral. Wait, this context menu usually is ephemeral?
+    flags: MessageFlags.Ephemeral,
   });
 }

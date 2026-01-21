@@ -1,6 +1,14 @@
-import { ChatInputCommandInteraction, MessageFlags, ButtonInteraction, ModalSubmitInteraction, AutocompleteInteraction, Interaction, GuildMember } from 'discord.js';
-import mongoose from 'mongoose';
-import { logger } from './logger';
+import {
+  ChatInputCommandInteraction,
+  MessageFlags,
+  ButtonInteraction,
+  ModalSubmitInteraction,
+  AutocompleteInteraction,
+  Interaction,
+  GuildMember,
+} from "discord.js";
+import mongoose from "mongoose";
+import { logger } from "./logger";
 
 /**
  * 根据错误类型生成友好的错误消息
@@ -8,48 +16,58 @@ import { logger } from './logger';
 function getErrorMessage(error: unknown): string {
   if (error instanceof mongoose.Error) {
     switch (error.name) {
-      case 'MongooseServerSelectionError':
-        return '🔴 Database connection failed. Please try again later.';
-      case 'ValidationError':
-        return '🟡 Data validation failed. Please check your input.';
+      case "MongooseServerSelectionError":
+        return "🔴 Database connection failed. Please try again later.";
+      case "ValidationError":
+        return "🟡 Data validation failed. Please check your input.";
       default:
-        return '🔴 Database operation error. Please contact an administrator.';
+        return "🔴 Database operation error. Please contact an administrator.";
     }
   }
-  
+
   if (error instanceof Error) {
     return `🟡 ${error.message}`;
   }
-  
-  return '🟡 Internal server error. Please try again later or contact an administrator.';
+
+  return "🟡 Internal server error. Please try again later or contact an administrator.";
 }
 
 /**
  * 处理命令执行错误并返回用户友好的错误消息
  */
-export async function handleCommandError(interaction: Interaction, error: unknown): Promise<void> {
+export async function handleCommandError(
+  interaction: Interaction,
+  error: unknown,
+): Promise<void> {
   // 增强错误日志
-  let commandName = 'unknown';
+  let commandName = "unknown";
   if (interaction.isChatInputCommand()) {
     commandName = interaction.commandName;
-  } else if (interaction.isButton() || interaction.isModalSubmit() || interaction.isStringSelectMenu()) {
+  } else if (
+    interaction.isButton() ||
+    interaction.isModalSubmit() ||
+    interaction.isStringSelectMenu()
+  ) {
     commandName = interaction.customId;
   }
-  
-  logger.error('Command Error:', {
+
+  logger.error("Command Error:", {
     command: commandName,
     user: interaction.user.id,
     guild: interaction.guildId,
-    error: error
+    error: error,
   });
-  
-  const errorMessage = '🔴 Operation Failed\n\n' + getErrorMessage(error);
-  
+
+  const errorMessage = "🔴 Operation Failed\n\n" + getErrorMessage(error);
+
   if (interaction.isRepliable()) {
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply(errorMessage);
     } else {
-      await interaction.reply({ content: errorMessage, ephemeral: true });
+      await interaction.reply({
+        content: errorMessage,
+        flags: MessageFlags.Ephemeral,
+      });
     }
   }
 }
@@ -61,8 +79,8 @@ export function requireGuild(interaction: Interaction): string | null {
   if (!interaction.guildId) {
     if (interaction.isRepliable()) {
       interaction.reply({
-        content: '🔴 This command can only be used in a server!',
-        ephemeral: true
+        content: "🔴 This command can only be used in a server!",
+        flags: MessageFlags.Ephemeral,
       });
     }
     return null;
@@ -75,13 +93,13 @@ export function requireGuild(interaction: Interaction): string | null {
  */
 export function requireAdmin(interaction: Interaction): boolean {
   if (!interaction.guild) return false;
-  
+
   const member = interaction.member as GuildMember;
-  if (!member?.permissions.has('Administrator')) {
+  if (!member?.permissions.has("Administrator")) {
     if (interaction.isRepliable()) {
       interaction.reply({
-        content: '🔴 Only administrators can use this command!',
-        ephemeral: true
+        content: "🔴 Only administrators can use this command!",
+        flags: MessageFlags.Ephemeral,
       });
     }
     return false;
@@ -94,12 +112,12 @@ export function requireAdmin(interaction: Interaction): boolean {
  */
 export function requireOwner(interaction: Interaction): boolean {
   if (!interaction.guild) return false;
-  
+
   if (interaction.guild.ownerId !== interaction.user.id) {
     if (interaction.isRepliable()) {
       interaction.reply({
-        content: '🔴 Only the server owner can use this command!',
-        ephemeral: true
+        content: "🔴 Only the server owner can use this command!",
+        flags: MessageFlags.Ephemeral,
       });
     }
     return false;

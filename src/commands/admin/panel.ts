@@ -14,8 +14,8 @@ import {
   RoleSelectMenuBuilder,
   UserSelectMenuInteraction,
   RoleSelectMenuInteraction,
-  LabelBuilder,
   ComponentType,
+  LabelBuilder,
 } from "discord.js";
 import { EMBED_COLORS } from "../../config/constants";
 import {
@@ -331,47 +331,38 @@ export async function showAddSponsorWizard(
     .setCustomId("wizard_submit")
     .setTitle("Add Sponsor");
 
-  // 1. User Select
   const userSelect = new UserSelectMenuBuilder()
     .setCustomId("wizard_select_user")
     .setPlaceholder("Select a Discord User")
     .setMaxValues(1);
 
-  // 2. VRChat Name Input (Label moved to LabelBuilder)
+  const userLabel = new LabelBuilder()
+    .setLabel("Discord User")
+    .setUserSelectMenuComponent(userSelect);
+
   const vrcInput = new TextInputBuilder()
     .setCustomId("vrchat_name")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
+    .setStyle(TextInputStyle.Short);
 
-  // 3. Role Select (Optional)
+  const vrcLabel = new LabelBuilder()
+    .setLabel("VRChat Name")
+    .setTextInputComponent(vrcInput);
+
   const roleSelect = new RoleSelectMenuBuilder()
     .setCustomId("wizard_select_role")
     .setPlaceholder("Select Roles (Optional)")
     .setMinValues(0)
     .setMaxValues(5);
 
-  // 4. Notes Input (Optional)
+  const roleLabel = new LabelBuilder()
+    .setLabel("Roles")
+    .setRoleSelectMenuComponent(roleSelect);
+
   const notesInput = new TextInputBuilder()
     .setCustomId("notes")
     .setStyle(TextInputStyle.Short)
     .setRequired(false);
 
-  // Components must be wrapped in LabelBuilder (Discord.js v14.23+)
-  // Note: We use any cast if TS definitions are missing in local env, but runtime should work.
-
-  const userLabel = new LabelBuilder()
-    .setLabel("Discord User")
-    .setUserSelectMenuComponent(userSelect);
-
-  const vrcLabel = new LabelBuilder()
-    .setLabel("VRChat Name")
-    .setTextInputComponent(vrcInput);
-
-  const roleLabel = new LabelBuilder()
-    .setLabel("Roles")
-    .setRoleSelectMenuComponent(roleSelect);
-
-  // @ts-ignore: New API usage
   const notesLabel = new LabelBuilder()
     .setLabel("Notes (Optional)")
     .setTextInputComponent(notesInput);
@@ -490,20 +481,25 @@ export async function showManualAddSponsorModal(
     .setStyle(TextInputStyle.Short)
     .setRequired(false);
 
-  const vrcLabel = new LabelBuilder()
-    .setLabel("VRChat Name")
-    .setTextInputComponent(vrchatInput);
-  const rolesLabel = new LabelBuilder()
-    .setLabel("Roles (comma separated)")
-    .setTextInputComponent(rolesInput);
-  const userIdLabel = new LabelBuilder()
-    .setLabel("User ID / Manual Tag")
-    .setTextInputComponent(userIdInput);
-  const notesLabel = new LabelBuilder()
-    .setLabel("Notes (Optional)")
-    .setTextInputComponent(notesInput);
+  vrchatInput.setLabel("VRChat Name");
+  rolesInput.setLabel("Roles (comma separated)");
+  userIdInput.setLabel("User ID / Manual Tag");
+  notesInput.setLabel("Notes (Optional)");
 
-  modal.addLabelComponents(vrcLabel, rolesLabel, userIdLabel, notesLabel);
+  const vrcRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    vrchatInput,
+  );
+  const rolesRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    rolesInput,
+  );
+  const userIdRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    userIdInput,
+  );
+  const notesRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+    notesInput,
+  );
+
+  modal.addComponents(vrcRow, rolesRow, userIdRow, notesRow);
 
   await interaction.showModal(modal);
 }
@@ -623,9 +619,11 @@ export async function showEditSponsorModal(
   const vrcLabel = new LabelBuilder()
     .setLabel("VRChat Name")
     .setTextInputComponent(vrchatInput);
+
   const rolesLabel = new LabelBuilder()
     .setLabel("Roles (comma separated)")
     .setTextInputComponent(rolesInput);
+
   const notesLabel = new LabelBuilder()
     .setLabel("Notes")
     .setTextInputComponent(notesInput);
