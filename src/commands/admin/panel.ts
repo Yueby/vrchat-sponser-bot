@@ -590,13 +590,15 @@ export async function showEditSponsorModal(
   userId: string,
 ): Promise<void> {
   const guildId = requireGuild(interaction);
+  if (!guildId) return;
+
   const user = await User.findOne({ userId, guildId });
   const binding = await VRChatBinding.findOne({ userId, guildId });
 
   if (!user) {
     await interaction.reply({
       content: "🔴 User not found.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
