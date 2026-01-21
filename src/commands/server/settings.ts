@@ -412,7 +412,7 @@ export async function showApiKey(
     )
     .addFields({
       name: "API Endpoint",
-      value: `\`/api/guilds/${guildId}/sponsors\``,
+      value: `\`/api/vrchat/sponsors/${guildId}\``,
     });
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
