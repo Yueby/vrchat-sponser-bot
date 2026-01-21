@@ -128,7 +128,7 @@ export async function showSearchModal(
   const input = new TextInputBuilder()
     .setCustomId("query")
     .setLabel("Search Query")
-    .setPlaceholder("Enter Discord ID, Name, or VRChat Name")
+    .setPlaceholder("Discord ID / Username / VRChat Name")
     .setStyle(TextInputStyle.Short)
     .setRequired(true);
 
@@ -155,16 +155,23 @@ export async function handleSearchSubmit(
   const query = interaction.fields.getTextInputValue("query");
 
   try {
-    // 优先按 VRC 名搜，或者 Discord ID
+    // 搜索策略：
+    // 1. VRChat 名称（模糊匹配）
+    // 2. Discord User ID（精确匹配）
+    // 3. Discord displayName（模糊匹配）
+
     const binding = await VRChatBinding.findOne({
       guildId,
       $or: [{ vrchatName: new RegExp(query, "i") }, { userId: query }],
     });
 
-    // Also try finding by User if binding not found (for manual users)
+    // 如果没找到绑定，尝试按 User 表搜索（支持 displayName）
     let user = null;
     if (!binding) {
-      user = await User.findOne({ guildId, userId: query });
+      user = await User.findOne({
+        guildId,
+        $or: [{ userId: query }, { displayName: new RegExp(query, "i") }],
+      });
     }
 
     if (binding || user) {
