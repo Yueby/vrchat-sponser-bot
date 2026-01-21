@@ -29,6 +29,7 @@ import { parseRoles, generateRandomId } from "../../utils/external";
 import { sanitizeVRChatName } from "../../utils/validation";
 import { getUnboundMembers, UnboundMember } from "../../utils/binding";
 import { smartDefer } from "../../utils/interactionHelper";
+import { logger } from "../../utils/logger";
 
 /**
  * /admin - 管理员主面板
@@ -155,24 +156,24 @@ export async function handleSearchSubmit(
   const query = interaction.fields.getTextInputValue("query");
 
   try {
-    // 搜索策略：
-    // 1. VRChat 名称（模糊匹配）
-    // 2. Discord User ID（精确匹配）
-    // 3. Discord displayName（模糊匹配）
+    // 搜索策略：同时查询 VRChatBinding 和 User 表
+    // 支持：VRChat名称、Discord ID、Discord displayName（均支持模糊匹配）
 
-    const binding = await VRChatBinding.findOne({
-      guildId,
-      $or: [{ vrchatName: new RegExp(query, "i") }, { userId: query }],
-    });
-
-    // 如果没找到绑定，尝试按 User 表搜索（支持 displayName）
-    let user = null;
-    if (!binding) {
-      user = await User.findOne({
+    const [binding, user] = await Promise.all([
+      VRChatBinding.findOne({
+        guildId,
+        $or: [{ vrchatName: new RegExp(query, "i") }, { userId: query }],
+      }),
+      User.findOne({
         guildId,
         $or: [{ userId: query }, { displayName: new RegExp(query, "i") }],
-      });
-    }
+      }),
+    ]);
+
+    // 调试日志
+    logger.info(
+      `Search query: "${query}", binding: ${!!binding}, user: ${!!user}`,
+    );
 
     if (binding || user) {
       const targetId = binding?.userId || user?.userId;
@@ -222,6 +223,9 @@ export async function handleSearchSubmit(
         components: [row as any],
       });
     } else {
+      logger.warn(
+        `No results for search query: "${query}" in guild ${guildId}`,
+      );
       await interaction.editReply({
         content: `No results found for "${query}".`,
         components: [
