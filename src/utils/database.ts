@@ -25,6 +25,7 @@ export async function bulkUpsertDiscordUsers(
         update: {
           $set: {
             userType: "discord" as const,
+            displayName: member.displayName || member.user.username,
             roles: getMemberRoleIds(member),
             isBooster: isMemberBooster(member),
             joinedAt: member.joinedAt || new Date(),
