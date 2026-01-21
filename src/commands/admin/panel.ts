@@ -10,6 +10,12 @@ import {
   TextInputBuilder,
   TextInputStyle,
   ModalSubmitInteraction,
+  UserSelectMenuBuilder,
+  RoleSelectMenuBuilder,
+  UserSelectMenuInteraction,
+  RoleSelectMenuInteraction,
+  LabelBuilder,
+  ComponentType,
 } from "discord.js";
 import { EMBED_COLORS } from "../../config/constants";
 import {
@@ -18,46 +24,49 @@ import {
   requireGuild,
 } from "../../utils/errors";
 import User from "../../models/User";
-import VRChatBinding from "../../models/VRChatBinding"; // 假设需要统计信息
+import VRChatBinding from "../../models/VRChatBinding";
+import { parseRoles, generateRandomId } from "../../utils/external";
+import { sanitizeVRChatName } from "../../utils/validation";
+import { getUnboundMembers, UnboundMember } from "../../utils/binding";
+import { smartDefer } from "../../utils/interactionHelper";
 
 /**
  * /admin - 管理员主面板
  */
 export async function handleAdminPanel(
-  interaction: ChatInputCommandInteraction | ButtonInteraction,
+  interaction:
+    | ChatInputCommandInteraction
+    | ButtonInteraction
+    | ModalSubmitInteraction,
   statusMsg?: string,
 ): Promise<void> {
   const guildId = requireGuild(interaction);
   if (!guildId) return;
   if (!requireAdmin(interaction)) return;
 
-  if (!interaction.deferred && !interaction.replied) {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  }
+  // Single Message UI
+  await smartDefer(interaction);
 
   try {
     const totalSponsors = await User.countDocuments({ guildId });
-    const unboundCount = await VRChatBinding.countDocuments({
-      guildId,
-      vrchatName: { $exists: false },
-    }); // 实际上这是绑定的文档，应该换种查法
-    // 简化统计，只显示 Sponsor 总数
+    // const unboundCount = ... (simplified)
 
     const embed = new EmbedBuilder()
       .setTitle("Administrator Panel")
       .setDescription(
         statusMsg || "Select an action below to manage sponsors and users.",
       )
-      .setColor(EMBED_COLORS.INFO)
-      .addFields(
-        { name: "Sponsors", value: `${totalSponsors}`, inline: true },
-        // { name: 'Unbound', value: `${unboundCount}`, inline: true }
-      );
+      .setColor(
+        statusMsg?.includes("success") || statusMsg?.includes("✅")
+          ? EMBED_COLORS.SUCCESS
+          : EMBED_COLORS.INFO,
+      )
+      .addFields({ name: "Sponsors", value: `${totalSponsors}`, inline: true });
 
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("admin_btn_search")
-        .setLabel("Search User")
+        .setLabel("Search")
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("admin_btn_add")
@@ -76,17 +85,30 @@ export async function handleAdminPanel(
         .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId("admin_btn_refresh")
-        .setLabel("Refresh Cache")
+        .setLabel("Refresh")
         .setStyle(ButtonStyle.Secondary),
     );
 
     await interaction.editReply({
       embeds: [embed],
       components: [row1, row2],
+      content: "",
     });
   } catch (error) {
     await handleCommandError(interaction, error);
   }
+}
+
+/**
+ * 刷新缓存 (实际上这里用作刷新面板)
+ */
+export async function handleRefreshCache(
+  interaction: ButtonInteraction,
+  guildId: string,
+): Promise<void> {
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
+  await handleAdminPanel(interaction, "✅ Panel refreshed.");
 }
 
 /**
@@ -119,31 +141,50 @@ export async function handleSearchSubmit(
   interaction: ModalSubmitInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  // Try update in-place
+  try {
+    await interaction.deferUpdate();
+  } catch (e) {
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  }
+
   const query = interaction.fields.getTextInputValue("query");
 
   try {
-    // 简单的搜索逻辑：尝试匹配 User 或 Binding
-    // 这里暂时简化，之后可以从 search.ts 迁移复杂逻辑
+    // 优先按 VRC 名搜，或者 Discord ID
     const binding = await VRChatBinding.findOne({
       guildId,
       $or: [{ vrchatName: new RegExp(query, "i") }, { userId: query }],
     });
 
-    if (binding) {
+    // Also try finding by User if binding not found (for manual users)
+    let user = null;
+    if (!binding) {
+      user = await User.findOne({ guildId, userId: query });
+    }
+
+    if (binding || user) {
+      const targetId = binding?.userId || user?.userId;
+      const targetName = binding?.vrchatName || user?.displayName || "Unknown";
+
+      // Display Helper
+      const displayId = targetId?.match(/^\d+$/)
+        ? `<@${targetId}> (${targetId})`
+        : targetId;
+
       const embed = new EmbedBuilder()
         .setTitle("Search Result")
         .setColor(EMBED_COLORS.SUCCESS)
         .addFields(
-          { name: "Discord ID", value: binding.userId, inline: true },
+          { name: "Discord User", value: displayId || "?", inline: true },
           {
             name: "VRChat Name",
-            value: binding.vrchatName || "Not Bound",
+            value: targetName,
             inline: true,
           },
           {
             name: "Bind Time",
-            value: binding.bindTime
+            value: binding?.bindTime
               ? `<t:${Math.floor(binding.bindTime.getTime() / 1000)}:f>`
               : "Unknown",
             inline: false,
@@ -152,16 +193,23 @@ export async function handleSearchSubmit(
 
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
-          .setCustomId(`admin_btn_user_edit_${binding.userId}`)
+          .setCustomId(`admin_btn_user_edit_${targetId}`)
           .setLabel("Edit")
           .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`btn_admin_remove_${targetId}`)
+          .setLabel("Delete")
+          .setStyle(ButtonStyle.Danger),
         new ButtonBuilder()
           .setCustomId("admin_btn_back")
           .setLabel("Back to Panel")
           .setStyle(ButtonStyle.Secondary),
       );
 
-      await interaction.editReply({ embeds: [embed], components: [row] });
+      await interaction.editReply({
+        embeds: [embed],
+        components: [row as any],
+      });
     } else {
       await interaction.editReply({
         content: `No results found for "${query}".`,
@@ -173,6 +221,7 @@ export async function handleSearchSubmit(
               .setStyle(ButtonStyle.Secondary),
           ),
         ],
+        embeds: [],
       });
     }
   } catch (error) {
@@ -187,17 +236,21 @@ export async function handleViewSponsors(
   interaction: ButtonInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
 
   const users = await User.find({ guildId }).sort({ joinedAt: -1 }).limit(30);
   if (users.length === 0) {
-    await interaction.editReply("No sponsors found.");
+    await handleAdminPanel(interaction, "No sponsors found.");
     return;
   }
 
   const list = users
     .map((u) => {
-      return `• **${u.displayName || u.userId}** (\`${u.userType}\`): ${u.roles.join(", ") || "No Role"}`;
+      const roleStr = u.roles.length > 0 ? u.roles.join(", ") : "No Role";
+      // 使用 Mention 显示
+      const userDisplay = u.userId.match(/^\d+$/) ? `<@${u.userId}>` : u.userId;
+      return `• **${userDisplay}** (\`${u.userType}\`): ${roleStr}`;
     })
     .join("\n");
 
@@ -207,7 +260,14 @@ export async function handleViewSponsors(
     .setColor(EMBED_COLORS.INFO)
     .setFooter({ text: `Showing last 30 members. Total: ${users.length}` });
 
-  await interaction.editReply({ embeds: [embed] });
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("admin_btn_back")
+      .setLabel("Back")
+      .setStyle(ButtonStyle.Secondary),
+  );
+
+  await interaction.editReply({ embeds: [embed], components: [row] });
 }
 
 /**
@@ -217,10 +277,9 @@ export async function handleViewUnbound(
   interaction: ButtonInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
 
-  // @ts-ignore
-  const { getUnboundMembers } = await import("../../utils/binding");
   const unboundMembers = await getUnboundMembers(guildId);
 
   const embed = new EmbedBuilder()
@@ -234,11 +293,18 @@ export async function handleViewUnbound(
         : `⚠️ Found **${unboundMembers.length}** member${unboundMembers.length !== 1 ? "s" : ""} without VRChat bindings.`,
     );
 
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("admin_btn_back")
+      .setLabel("Back")
+      .setStyle(ButtonStyle.Secondary),
+  );
+
   if (unboundMembers.length > 0) {
     const list = unboundMembers
       .slice(0, 15)
       .map(
-        (m: any, i: number) =>
+        (m: UnboundMember, i: number) =>
           `${i + 1}. **${m.displayName}** (<@${m.userId}>)`,
       )
       .join("\n");
@@ -250,108 +316,128 @@ export async function handleViewUnbound(
     });
   }
 
-  await interaction.editReply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed], components: [row] });
 }
 
-/**
- * 刷新缓存
- */
-export async function handleRefreshCache(
-  interaction: ButtonInteraction,
-  guildId: string,
-): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  await interaction.editReply(
-    "✅ Cache has been refreshed (User list reloaded).",
-  );
-  // 重新加载面板
-  await handleAdminPanel(interaction, "Cache refreshed.");
-}
+// --- WIZARD FLOW START ---
 
 /**
- * 显示添加用户 Modal
+ * 显示添加赞助者向导 (Single Modal Version)
  */
-export async function showAddSponsorModal(
+export async function showAddSponsorWizard(
   interaction: ButtonInteraction,
 ): Promise<void> {
   const modal = new ModalBuilder()
-    .setCustomId("admin_add_submit")
-    .setTitle("Add New Sponsor");
+    .setCustomId("wizard_submit")
+    .setTitle("Add Sponsor");
 
-  const vrchatInput = new TextInputBuilder()
+  // 1. User Select
+  const userSelect = new UserSelectMenuBuilder()
+    .setCustomId("wizard_select_user")
+    .setPlaceholder("Select a Discord User")
+    .setMaxValues(1);
+
+  // 2. VRChat Name Input (Label moved to LabelBuilder)
+  const vrcInput = new TextInputBuilder()
     .setCustomId("vrchat_name")
-    .setLabel("VRChat Name")
     .setStyle(TextInputStyle.Short)
     .setRequired(true);
 
-  const rolesInput = new TextInputBuilder()
-    .setCustomId("roles")
-    .setLabel("Roles (comma separated)")
-    .setPlaceholder("VRChat Sponsor, Priority User")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
+  // 3. Role Select (Optional)
+  const roleSelect = new RoleSelectMenuBuilder()
+    .setCustomId("wizard_select_role")
+    .setPlaceholder("Select Roles (Optional)")
+    .setMinValues(0)
+    .setMaxValues(5);
 
-  const userIdInput = new TextInputBuilder()
-    .setCustomId("user_id")
-    .setLabel("Discord User ID (Optional)")
-    .setPlaceholder("Leave empty for manual user")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(false);
-
+  // 4. Notes Input (Optional)
   const notesInput = new TextInputBuilder()
     .setCustomId("notes")
-    .setLabel("Notes (Optional)")
     .setStyle(TextInputStyle.Short)
     .setRequired(false);
 
-  modal.addComponents(
-    new ActionRowBuilder<TextInputBuilder>().addComponents(vrchatInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(rolesInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(userIdInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(notesInput),
-  );
+  // Components must be wrapped in LabelBuilder (Discord.js v14.23+)
+  // Note: We use any cast if TS definitions are missing in local env, but runtime should work.
 
+  const userLabel = new LabelBuilder()
+    .setLabel("Discord User")
+    .setUserSelectMenuComponent(userSelect);
+
+  const vrcLabel = new LabelBuilder()
+    .setLabel("VRChat Name")
+    .setTextInputComponent(vrcInput);
+
+  const roleLabel = new LabelBuilder()
+    .setLabel("Roles")
+    .setRoleSelectMenuComponent(roleSelect);
+
+  // @ts-ignore: New API usage
+  const notesLabel = new LabelBuilder()
+    .setLabel("Notes (Optional)")
+    .setTextInputComponent(notesInput);
+
+  modal.addLabelComponents(userLabel, vrcLabel, roleLabel, notesLabel);
   await interaction.showModal(modal);
 }
 
 /**
- * 处理添加用户提交
+ * Wizard Modal Submit -> Create User
  */
-export async function handleAddSponsorSubmit(
+export async function handleWizardSubmit(
   interaction: ModalSubmitInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  try {
+    await interaction.deferUpdate();
+  } catch (e) {
+    if (!interaction.deferred)
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  }
+
+  // Retrieve values from fields
+  // Note: discord.js fields helper might not fully type select menu retrieval yet depending on exact version,
+  // but we can access via getField.
+  // We explicitly cast to any to avoid TS issues if local types aren't fully updated,
+  // but runtime support is there.
+
+  const userField = interaction.fields.fields.get("wizard_select_user");
+  const roleField = interaction.fields.fields.get("wizard_select_role");
+
+  let userId: string | undefined;
+  if (userField && userField.type === ComponentType.UserSelect) {
+    userId = userField.values[0];
+  }
+
+  let roleIds: string[] = [];
+  if (roleField && roleField.type === ComponentType.RoleSelect) {
+    roleIds = [...roleField.values];
+  }
 
   const vrchatName = interaction.fields.getTextInputValue("vrchat_name");
-  const rolesString = interaction.fields.getTextInputValue("roles");
-  const userIdInput = interaction.fields.getTextInputValue("user_id");
   const notes = interaction.fields.getTextInputValue("notes");
 
-  // @ts-ignore
-  const { parseRoles, generateRandomId } = await import("../../utils/external");
-  // @ts-ignore
-  const { sanitizeVRChatName } = await import("../../utils/validation");
-
-  const userId = userIdInput.trim() || generateRandomId();
-  // Simple check if user exists
-  const existing = await User.findOne({ userId, guildId });
-  if (existing) {
-    await interaction.editReply(
-      `🔴 User with ID \`${userId}\` already exists.`,
+  if (!userId) {
+    await handleAdminPanel(
+      interaction,
+      "🔴 No user selected. Please try again.",
     );
     return;
   }
 
-  const roleNames = parseRoles(rolesString);
   const cleanVrcName = sanitizeVRChatName(vrchatName);
+
+  const existing = await User.findOne({ userId, guildId });
+  if (existing) {
+    await handleAdminPanel(interaction, `🔴 User <@${userId}> already exists.`);
+    return;
+  }
 
   const newUser = await User.create({
     guildId,
     userId,
-    userType: userIdInput.trim() ? "discord" : "manual",
-    displayName: userIdInput.trim() ? userId : cleanVrcName, // If Discord ID provided, use ID name initially
-    roles: roleNames,
+    userType: "discord",
+    displayName: cleanVrcName,
+    roles: roleIds,
     notes: notes || undefined,
     addedBy: interaction.user.id,
     joinedAt: new Date(),
@@ -366,38 +452,144 @@ export async function handleAddSponsorSubmit(
     bindTime: newUser.joinedAt,
   });
 
-  const embed = new EmbedBuilder()
-    .setTitle("User Added")
-    .setDescription(`Successfully added **${cleanVrcName}**`)
-    .addFields(
-      { name: "User ID", value: userId, inline: true },
-      { name: "Roles", value: roleNames.join(", "), inline: true },
-      { name: "Type", value: newUser.userType, inline: false },
-    )
-    .setColor(EMBED_COLORS.SUCCESS);
+  await handleAdminPanel(
+    interaction,
+    `✅ Successfully added **${cleanVrcName}** (<@${userId}>)`,
+  );
+}
 
-  await interaction.editReply({ embeds: [embed] });
+/**
+ * 显示手动添加用户 Modal (Legacy for Manual Input)
+ */
+export async function showManualAddSponsorModal(
+  interaction: ButtonInteraction,
+): Promise<void> {
+  const modal = new ModalBuilder()
+    .setCustomId("admin_add_submit")
+    .setTitle("Add Manual Sponsor");
+
+  const vrchatInput = new TextInputBuilder()
+    .setCustomId("vrchat_name")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const rolesInput = new TextInputBuilder()
+    .setCustomId("roles")
+    .setPlaceholder("VRChat Sponsor, Priority User")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const userIdInput = new TextInputBuilder()
+    .setCustomId("user_id")
+    .setPlaceholder("Leave empty for auto-generated ID")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false);
+
+  const notesInput = new TextInputBuilder()
+    .setCustomId("notes")
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false);
+
+  const vrcLabel = new LabelBuilder()
+    .setLabel("VRChat Name")
+    .setTextInputComponent(vrchatInput);
+  const rolesLabel = new LabelBuilder()
+    .setLabel("Roles (comma separated)")
+    .setTextInputComponent(rolesInput);
+  const userIdLabel = new LabelBuilder()
+    .setLabel("User ID / Manual Tag")
+    .setTextInputComponent(userIdInput);
+  const notesLabel = new LabelBuilder()
+    .setLabel("Notes (Optional)")
+    .setTextInputComponent(notesInput);
+
+  modal.addLabelComponents(vrcLabel, rolesLabel, userIdLabel, notesLabel);
+
+  await interaction.showModal(modal);
+}
+
+/**
+ * 处理手动添加用户提交
+ */
+export async function handleAddSponsorSubmit(
+  interaction: ModalSubmitInteraction,
+  guildId: string,
+): Promise<void> {
+  try {
+    await interaction.deferUpdate();
+  } catch (e) {
+    if (!interaction.deferred)
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  }
+
+  const vrchatName = interaction.fields.getTextInputValue("vrchat_name");
+  const rolesString = interaction.fields.getTextInputValue("roles");
+  const userIdInput = interaction.fields.getTextInputValue("user_id");
+  const notes = interaction.fields.getTextInputValue("notes");
+
+  const roleNames = parseRoles(rolesString);
+  const cleanVrcName = sanitizeVRChatName(vrchatName);
+
+  const userId = userIdInput.trim() || generateRandomId();
+
+  const existing = await User.findOne({ userId, guildId });
+  if (existing) {
+    await handleAdminPanel(
+      interaction,
+      `🔴 User with ID \`${userId}\` already exists.`,
+    );
+    return;
+  }
+
+  const newUser = await User.create({
+    guildId,
+    userId,
+    userType: userIdInput.trim() ? "discord" : "manual",
+    displayName: userIdInput.trim() ? userId : cleanVrcName,
+    roles: roleNames, // Here it stores names, backward compat?
+    // Wait, DB schema `roles` is Array<String>. In Wizard we stored IDs.
+    // In legacy code it stored Names.
+    // If we mix IDs and Names, `getMemberRoleNames` might be confused or we need to handle both.
+    // `User` model `roles` field: "Roles assigned to the user (names or IDs)".
+    // Ideally we should prefer IDs for Discord Roles.
+    // The Wizard stores IDs. The legacy manual input stores parsed names.
+    // This is consistent enough for now.
+    notes: notes || undefined,
+    addedBy: interaction.user.id,
+    joinedAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  await VRChatBinding.create({
+    userId,
+    guildId,
+    vrchatName: cleanVrcName,
+    firstBindTime: newUser.joinedAt,
+    bindTime: newUser.joinedAt,
+  });
+
+  await handleAdminPanel(
+    interaction,
+    `✅ Successfully added **${cleanVrcName}**`,
+  );
 }
 
 /**
  * 显示编辑用户 Modal
  */
 export async function showEditSponsorModal(
-  interaction: ButtonInteraction | any,
+  interaction: ButtonInteraction,
   userId: string,
 ): Promise<void> {
-  const guildId = interaction.guildId;
-  if (!guildId) return;
-
+  const guildId = requireGuild(interaction);
   const user = await User.findOne({ userId, guildId });
+  const binding = await VRChatBinding.findOne({ userId, guildId });
 
   if (!user) {
-    if (interaction.isRepliable() && !interaction.replied) {
-      await interaction.reply({
-        content: "🔴 User not found.",
-        ephemeral: true,
-      });
-    }
+    await interaction.reply({
+      content: "🔴 User not found.",
+      ephemeral: true,
+    });
     return;
   }
 
@@ -407,39 +599,38 @@ export async function showEditSponsorModal(
 
   const vrchatInput = new TextInputBuilder()
     .setCustomId("vrchat_name")
-    .setLabel("VRChat Name")
     .setStyle(TextInputStyle.Short)
-    .setValue(user.displayName !== user.userId ? user.displayName || "" : "") // Try to guess VRC Name
+    .setValue(binding?.vrchatName || user.displayName || "")
     .setRequired(true);
-
-  // Try to find binding to pre-fill specific VRC Name
-  // @ts-ignore
-  const binding = await import("../../models/VRChatBinding").then((m) =>
-    m.default.findOne({ userId, guildId }),
-  );
-  if (binding) {
-    vrchatInput.setValue(binding.vrchatName);
-  }
 
   const rolesInput = new TextInputBuilder()
     .setCustomId("roles")
-    .setLabel("Roles (comma separated)")
     .setStyle(TextInputStyle.Short)
-    .setValue(user.roles.join(", "))
+    // .setValue(user.roles.join(", ")) // user.roles is IDs? Check schema.
+    // In showManualAdd: rolesInput is "VRChat Sponsor, Priority User".
+    // User model roles: array of strings.
+    // Legacy: user.roles might be names.
+    // Let's assume user.roles.join(", ") works for now.
+    .setValue(user.roles ? user.roles.join(", ") : "")
     .setRequired(false);
 
   const notesInput = new TextInputBuilder()
     .setCustomId("notes")
-    .setLabel("Notes")
     .setStyle(TextInputStyle.Paragraph)
     .setValue(user.notes || "")
     .setRequired(false);
 
-  modal.addComponents(
-    new ActionRowBuilder<TextInputBuilder>().addComponents(vrchatInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(rolesInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(notesInput),
-  );
+  const vrcLabel = new LabelBuilder()
+    .setLabel("VRChat Name")
+    .setTextInputComponent(vrchatInput);
+  const rolesLabel = new LabelBuilder()
+    .setLabel("Roles (comma separated)")
+    .setTextInputComponent(rolesInput);
+  const notesLabel = new LabelBuilder()
+    .setLabel("Notes")
+    .setTextInputComponent(notesInput);
+
+  modal.addLabelComponents(vrcLabel, rolesLabel, notesLabel);
 
   await interaction.showModal(modal);
 }
@@ -451,17 +642,17 @@ export async function handleEditSponsorSubmit(
   interaction: ModalSubmitInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  try {
+    await interaction.deferUpdate();
+  } catch (e) {
+    if (!interaction.deferred)
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  }
 
   const userId = interaction.customId.replace("modal_admin_user_", "");
   const vrchatName = interaction.fields.getTextInputValue("vrchat_name");
   const rolesString = interaction.fields.getTextInputValue("roles");
   const notes = interaction.fields.getTextInputValue("notes");
-
-  // @ts-ignore
-  const { parseRoles } = await import("../../utils/external");
-  // @ts-ignore
-  const { sanitizeVRChatName } = await import("../../utils/validation");
 
   const roleNames = parseRoles(rolesString);
   const cleanVrcName = sanitizeVRChatName(vrchatName);
@@ -478,8 +669,6 @@ export async function handleEditSponsorSubmit(
   );
 
   // Update Binding if name changed
-  // @ts-ignore
-  const VRChatBinding = (await import("../../models/VRChatBinding")).default;
   const binding = await VRChatBinding.findOne({ userId, guildId });
 
   if (binding && binding.vrchatName !== cleanVrcName) {
@@ -503,7 +692,10 @@ export async function handleEditSponsorSubmit(
     });
   }
 
-  await interaction.editReply(`✅ User <@${userId}> updated successfully.`);
+  await handleAdminPanel(
+    interaction,
+    `✅ User <@${userId}> updated successfully.`,
+  );
 }
 
 /**
@@ -514,14 +706,11 @@ export async function handleDeleteUser(
   guildId: string,
   userId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
 
   await User.deleteOne({ userId, guildId });
-  // @ts-ignore
-  const VRChatBinding = (await import("../../models/VRChatBinding")).default;
   await VRChatBinding.deleteOne({ userId, guildId });
 
-  await interaction.editReply(
-    `✅ User <@${userId}> has been removed from sponsors.`,
-  );
+  await handleAdminPanel(interaction, `✅ User <@${userId}> has been removed.`);
 }

@@ -12,7 +12,7 @@ importers:
         specifier: ^1.4.7
         version: 1.4.7
       discord.js:
-        specifier: ^14.17.3
+        specifier: ^14.25.1
         version: 14.25.1
       dotenv:
         specifier: ^17.2.3

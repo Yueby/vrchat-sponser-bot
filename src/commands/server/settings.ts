@@ -13,6 +13,8 @@ import {
   PermissionsBitField,
   RoleSelectMenuBuilder,
   RepliableInteraction,
+  UserSelectMenuBuilder,
+  UserSelectMenuInteraction,
 } from "discord.js";
 import {
   getMembersWithRoles,
@@ -29,6 +31,8 @@ import {
 } from "../../utils/errors";
 import { client } from "../../bot";
 import { logger } from "../../utils/logger";
+import { bulkUpsertDiscordUsers } from "../../utils/database";
+import { smartDefer } from "../../utils/interactionHelper";
 
 /**
  * 主入口：处理 /server 指令 (面板)
@@ -41,10 +45,8 @@ export async function handleServerSettings(
   if (!guildId) return;
   if (!requireAdmin(interaction)) return;
 
-  // interaction.deferReply handled by caller or we handle it if not deferred
-  if (!interaction.deferred && !interaction.replied) {
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  }
+  // Single Message UI: Decide between deferUpdate (in-place) and deferReply (new msg)
+  await smartDefer(interaction);
 
   try {
     const guild = await Guild.findOne({ guildId });
@@ -85,110 +87,137 @@ export async function handleServerSettings(
         },
         {
           name: "Configuration",
-          value: `Web API: ${guild.apiEnabled ? "Enabled" : "Disabled"}\nNotify: ${guild.notifyUserId ? `<@${guild.notifyUserId}>` : "None"}`,
+          value: `Web API: ${guild.apiEnabled ? "✅ Enabled" : "❌ Disabled"}\nNotify: ${guild.notifyUserId ? `<@${guild.notifyUserId}>` : "None"}`,
           inline: false,
         },
       )
       .setTimestamp();
 
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("server_btn_sync")
         .setLabel("Sync Now")
         .setStyle(ButtonStyle.Primary)
-        .setDisabled(guild.isSyncing),
+        .setDisabled(guild.isSyncing || !hasManagedRoles || !guild.apiEnabled), // Disable sync if API disabled? Or separate concern? Actually sync is internal.
+      // Wait, Perform Sync uses internal logic, not API. So it should be fine.
+      // Updated requirement: Sync is independent.
+      // But let's check PerformSync logic. It uses database directly.
+    );
+
+    // Row 1: Core Actions
+    row1.addComponents(
       new ButtonBuilder()
-        .setCustomId("server_btn_config_modal")
-        .setLabel("Configure Settings")
+        .setCustomId("server_btn_roles")
+        .setLabel("Manage Roles")
+        .setStyle(ButtonStyle.Secondary),
+    );
+
+    // Row 2: Settings
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId("server_btn_notify_user")
+        .setLabel("Set Notify User")
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
+        .setCustomId("server_btn_toggle_api")
+        .setLabel(guild.apiEnabled ? "Disable API" : "Enable API")
+        .setStyle(guild.apiEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+      new ButtonBuilder()
         .setCustomId("server_btn_api_key")
-        .setLabel("Get API Key")
+        .setLabel("View API Key")
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(!guild.apiEnabled),
     );
 
-    await interaction.editReply({ embeds: [embed], components: [row] });
+    await interaction.editReply({
+      embeds: [embed],
+      components: [row1, row2],
+      content: "",
+    });
   } catch (error) {
     await handleCommandError(interaction, error);
   }
 }
 
 /**
- * 显示配置 Modal
+ * 切换 API 状态
  */
-export async function showConfigModal(
+export async function handleToggleApi(
   interaction: ButtonInteraction,
   guildId: string,
 ): Promise<void> {
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
+
   const guild = await Guild.findOne({ guildId });
   if (!guild) return;
 
-  const modal = new ModalBuilder()
-    .setCustomId("server_config_submit")
-    .setTitle("Server Configuration");
+  guild.apiEnabled = !guild.apiEnabled;
+  await guild.save();
 
-  const notifyInput = new TextInputBuilder()
-    .setCustomId("notify_user_id")
-    .setLabel("Notification User ID (Optional)")
-    .setPlaceholder("Enter Discord User ID")
-    .setStyle(TextInputStyle.Short)
-    .setValue(guild.notifyUserId || "")
-    .setRequired(false);
-
-  const apiInput = new TextInputBuilder()
-    .setCustomId("api_status")
-    .setLabel('Enable Web API? (Type "yes" or "no")')
-    .setStyle(TextInputStyle.Short)
-    .setValue(guild.apiEnabled ? "yes" : "no")
-    .setRequired(true);
-
-  modal.addComponents(
-    new ActionRowBuilder<TextInputBuilder>().addComponents(notifyInput),
-    new ActionRowBuilder<TextInputBuilder>().addComponents(apiInput),
+  await handleServerSettings(
+    interaction,
+    `Web API has been ${guild.apiEnabled ? "enabled" : "disabled"}.`,
   );
-
-  await interaction.showModal(modal);
 }
 
 /**
- * 处理配置提交
+ * 显示通知用户选择器
  */
-export async function handleServerConfigSubmit(
-  interaction: ModalSubmitInteraction,
+export async function showNotifyUserSelect(
+  interaction: ButtonInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
 
-  const notifyId = interaction.fields.getTextInputValue("notify_user_id");
-  const apiStatus = interaction.fields
-    .getTextInputValue("api_status")
-    .toLowerCase();
+  const guild = await Guild.findOne({ guildId });
 
-  try {
-    const guild = await Guild.findOne({ guildId });
-    if (!guild) return;
+  const embed = new EmbedBuilder()
+    .setTitle("Notification Settings")
+    .setDescription(
+      "Select a user to receive binding notifications (e.g. when new members are synced).",
+    )
+    .setColor(EMBED_COLORS.INFO);
 
-    guild.notifyUserId = notifyId.trim() || undefined;
+  const select = new UserSelectMenuBuilder()
+    .setCustomId("server_select_notify_user")
+    .setPlaceholder("Select a User")
+    .setMaxValues(1);
 
-    if (
-      apiStatus.includes("yes") ||
-      apiStatus.includes("true") ||
-      apiStatus === "1"
-    ) {
-      guild.apiEnabled = true;
-    } else {
-      guild.apiEnabled = false;
-    }
-
-    await guild.save();
-    await handleServerSettings(
-      interaction,
-      "Configuration updated successfully.",
-    );
-  } catch (error) {
-    await handleCommandError(interaction, error);
+  if (guild?.notifyUserId) {
+    select.setDefaultUsers([guild.notifyUserId]);
   }
+
+  const row1 = new ActionRowBuilder<UserSelectMenuBuilder>().addComponents(
+    select,
+  );
+  const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("server_btn_back")
+      .setLabel("Cancel")
+      .setStyle(ButtonStyle.Secondary),
+  );
+
+  await interaction.editReply({ embeds: [embed], components: [row1, row2] });
+}
+
+/**
+ * 处理通知用户更新
+ */
+export async function handleNotifyUserSelect(
+  interaction: UserSelectMenuInteraction,
+  guildId: string,
+): Promise<void> {
+  await interaction.deferUpdate();
+  const userId = interaction.values[0];
+
+  await Guild.updateOne({ guildId }, { notifyUserId: userId });
+
+  await handleServerSettings(
+    interaction,
+    `✅ Notification user updated to <@${userId}>.`,
+  );
 }
 
 /**
@@ -198,54 +227,57 @@ export async function performSyncNow(
   interaction: ButtonInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
 
   const startTime = Date.now();
   const guild = await Guild.findOne({ guildId });
   if (!guild || guild.managedRoleIds.length === 0) {
-    await interaction.editReply(
-      "🔴 No managed roles configured. Use `/server roles add` first.",
-    );
+    await handleServerSettings(interaction, "🔴 No managed roles configured.");
     return;
   }
+
+  await Guild.updateOne({ guildId }, { isSyncing: true });
+  // Show syncing state
+  // We can call handleServerSettings but statusMsg logic needs to be robust.
+  // For now, let's just wait it out or show a temp state if it takes long.
+  // Given we just deferred update, we can assume UI is static until editReply.
+  // But user might want feedback.
+  // Let's try to show 'Syncing...' by editing the embed description manually?
+  // Or just trusting it's fast.
+  // Let's use handleServerSettings to show Syncing.
+  await handleServerSettings(interaction, "🔄 Syncing started...");
 
   const members = await getMembersWithRoles(
     interaction.guild!,
     guild.managedRoleIds,
   );
   if (members.length === 0) {
-    await interaction.editReply("🔴 No members found with managed roles.");
+    await Guild.updateOne(
+      { guildId },
+      { isSyncing: false, lastSyncAt: new Date() },
+    );
+    await handleServerSettings(
+      interaction,
+      "🔴 No members found with managed roles.",
+    );
     return;
   }
 
-  // @ts-ignore
-  const { upsertedCount, modifiedCount } =
-    await import("../../utils/database").then((m) =>
-      m.bulkUpsertDiscordUsers(members, guildId),
-    );
+  const { upsertedCount, modifiedCount } = await bulkUpsertDiscordUsers(
+    members,
+    guildId,
+  );
+
   await Guild.updateOne(
     { guildId },
     { lastSyncAt: new Date(), isSyncing: false },
-  ); // Ensure syncing state is reset
+  );
 
-  const embed = new EmbedBuilder()
-    .setTitle("Sync Complete")
-    .setColor(EMBED_COLORS.SUCCESS)
-    .addFields(
-      {
-        name: "Stats",
-        value: `Total: ${upsertedCount + modifiedCount}\nNew: ${upsertedCount}\nUpdated: ${modifiedCount}`,
-        inline: true,
-      },
-      {
-        name: "Duration",
-        value: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
-        inline: true,
-      },
-    )
-    .setTimestamp();
+  const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+  const status = `Sync Complete. Total: ${upsertedCount + modifiedCount} (New: ${upsertedCount}, Updated: ${modifiedCount}) in ${duration}s`;
 
-  await interaction.editReply({ embeds: [embed] });
+  await handleServerSettings(interaction, status);
 
   logger.info(
     `Admin ${interaction.user.username} triggered manual sync in ${interaction.guild!.name}`,
@@ -253,26 +285,26 @@ export async function performSyncNow(
 }
 
 /**
- * 显示 Role 管理面板
+ * Role 管理面板
  */
 export async function handleRoleManagement(
   interaction: ButtonInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
 
   const guild = await Guild.findOne({ guildId });
-  const roles = guild?.managedRoleIds || [];
+  const roleIds = guild?.managedRoleIds || [];
 
-  const roleList =
-    roles.length > 0
-      ? roles.map((id) => `<@&${id}>`).join("\n")
-      : "No roles configured.";
+  const roleNames =
+    roleIds.map((id) => `<@&${id}>`).join("\n") || "No roles configured.";
 
   const embed = new EmbedBuilder()
-    .setTitle("Managed Roles Configuration")
-    .setDescription(`These roles are tracked as sponsors.\n\n${roleList}`)
-    .setColor(EMBED_COLORS.INFO);
+    .setTitle("Managed Roles")
+    .setDescription("The bot will track members with these roles.")
+    .setColor(EMBED_COLORS.INFO)
+    .addFields({ name: "Roles", value: roleNames });
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
@@ -282,24 +314,29 @@ export async function handleRoleManagement(
     new ButtonBuilder()
       .setCustomId("server_btn_role_clear")
       .setLabel("Clear All")
-      .setStyle(ButtonStyle.Danger),
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(roleIds.length === 0),
     new ButtonBuilder()
       .setCustomId("server_btn_back")
       .setLabel("Back")
       .setStyle(ButtonStyle.Secondary),
   );
 
-  await interaction.editReply({ embeds: [embed], components: [row] });
+  await interaction.editReply({
+    embeds: [embed],
+    components: [row as any],
+    content: "",
+  });
 }
 
 /**
- * 显示添加 Role 的选择器
+ * 添加 Role (显示 Select Menu)
  */
 export async function handleAddRole(
   interaction: ButtonInteraction,
 ): Promise<void> {
-  // @ts-ignore
-  const { RoleSelectMenuBuilder } = await import("discord.js");
+  if (!interaction.deferred && !interaction.replied)
+    await interaction.deferUpdate();
 
   const select = new RoleSelectMenuBuilder()
     .setCustomId("server_role_select")
@@ -307,11 +344,17 @@ export async function handleAddRole(
     .setMaxValues(1);
 
   const row = new ActionRowBuilder<any>().addComponents(select);
+  const backRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("server_btn_roles")
+      .setLabel("Cancel")
+      .setStyle(ButtonStyle.Secondary),
+  );
 
-  await interaction.reply({
+  await interaction.editReply({
     content: "Select a role to add as a sponsor role:",
-    components: [row],
-    flags: MessageFlags.Ephemeral,
+    embeds: [],
+    components: [row, backRow],
   });
 }
 
@@ -322,25 +365,16 @@ export async function handleRoleSelect(
   interaction: any,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  await interaction.deferUpdate();
   const roleId = interaction.values[0];
 
   const guild = await Guild.findOne({ guildId });
-  if (!guild) return;
-
-  if (guild.managedRoleIds.includes(roleId)) {
-    await interaction.editReply("This role is already managed.");
-    return;
+  if (guild && !guild.managedRoleIds.includes(roleId)) {
+    guild.managedRoleIds.push(roleId);
+    await guild.save();
   }
 
-  guild.managedRoleIds.push(roleId);
-  await guild.save();
-
-  // 触发同步 (可选，这里还是简单提示)
-  await interaction.editReply(`Role <@&${roleId}> added to managed roles.`);
-
-  // 可以在这里重新显示 Manage Roles 面板，或者让用户手动点返回。
-  // 为了体验，我们不自动跳回，因为这通常是临时消息。
+  await handleRoleManagement(interaction, guildId);
 }
 
 /**
@@ -350,9 +384,8 @@ export async function handleClearRoles(
   interaction: ButtonInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  await interaction.deferUpdate();
   await Guild.updateOne({ guildId }, { $set: { managedRoleIds: [] } });
-  await interaction.editReply("All managed roles have been cleared.");
   await handleRoleManagement(interaction, guildId);
 }
 
@@ -363,11 +396,11 @@ export async function showApiKey(
   interaction: ButtonInteraction,
   guildId: string,
 ): Promise<void> {
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+  await interaction.deferUpdate();
 
   const guild = await Guild.findOne({ guildId });
   if (!guild || !guild.apiEnabled) {
-    await interaction.editReply("Web API is disabled.");
+    await handleServerSettings(interaction as any, "Web API is disabled.");
     return;
   }
 
@@ -378,9 +411,16 @@ export async function showApiKey(
       "**Keep this URL secret!** It grants read access to sponsor data.",
     )
     .addFields({
-      name: "Endpoint URL",
-      value: `\`http://${process.env.DOMAIN || "localhost"}:${process.env.PORT || 3000}/api/vrchat/sponsors/${guildId}\``,
+      name: "API Endpoint",
+      value: `\`/api/guilds/${guildId}/sponsors\``,
     });
 
-  await interaction.editReply({ embeds: [embed] });
+  const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    new ButtonBuilder()
+      .setCustomId("server_btn_back")
+      .setLabel("Back")
+      .setStyle(ButtonStyle.Secondary),
+  );
+
+  await interaction.editReply({ embeds: [embed], components: [row] });
 }

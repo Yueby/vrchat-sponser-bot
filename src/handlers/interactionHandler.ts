@@ -14,6 +14,8 @@ import {
   AutocompleteInteraction,
   ChatInputCommandInteraction,
   User as DiscordUser,
+  UserSelectMenuInteraction,
+  RoleSelectMenuInteraction,
 } from "discord.js";
 import {
   handleUserProfile,
@@ -24,14 +26,15 @@ import {
 import {
   handleServerSettings,
   performSyncNow,
-  showConfigModal,
   showApiKey,
   handleRoleManagement,
   handleAddRole,
   handleClearRoles,
   handleRoleSelect,
-  handleServerConfigSubmit,
   handleClearRoles as handleClearRolesSettings,
+  handleToggleApi,
+  showNotifyUserSelect,
+  handleNotifyUserSelect,
 } from "../commands/server/settings";
 import {
   handleAdminPanel,
@@ -39,12 +42,14 @@ import {
   handleRefreshCache,
   handleViewSponsors,
   handleViewUnbound,
-  showAddSponsorModal,
+  showAddSponsorWizard,
+  showManualAddSponsorModal,
   showEditSponsorModal,
   handleDeleteUser,
   handleSearchSubmit,
   handleAddSponsorSubmit,
   handleEditSponsorSubmit,
+  handleWizardSubmit,
 } from "../commands/admin/panel";
 import { requireAdmin, requireGuild } from "../utils/errors";
 import { logger } from "../utils/logger";
@@ -66,17 +71,20 @@ export async function handleInteraction(
       await handleModalInteraction(interaction);
     } else if (interaction.isUserContextMenuCommand()) {
       await handleUserContextMenuInteraction(interaction);
+    } else if (interaction.isUserSelectMenu()) {
+      await handleUserSelectInteraction(interaction);
+    } else if (interaction.isRoleSelectMenu()) {
+      await handleRoleSelectInteraction(interaction);
     }
   } catch (error) {
     logger.error("Interaction Error:", error);
-    if ("reply" in interaction) {
-      const repliable = interaction as unknown as ButtonInteraction;
-      if (repliable.deferred || repliable.replied) {
-        await repliable.editReply({
+    if (interaction.isRepliable()) {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({
           content: "🔴 An error occurred while processing the interaction.",
         });
       } else {
-        await repliable.reply({
+        await interaction.reply({
           content: "🔴 An error occurred while processing the interaction.",
           ephemeral: true,
         });
@@ -115,8 +123,6 @@ async function handleButtonInteraction(
 
     if (customId === "server_btn_sync") {
       await performSyncNow(interaction, guildId);
-    } else if (customId === "server_btn_config_modal") {
-      await showConfigModal(interaction, guildId);
     } else if (customId === "server_btn_api_key") {
       await showApiKey(interaction, guildId);
     } else if (customId === "server_btn_roles") {
@@ -127,16 +133,11 @@ async function handleButtonInteraction(
       await handleClearRoles(interaction, guildId);
     } else if (customId === "server_btn_back") {
       await handleServerSettings(interaction, guildId);
+    } else if (customId === "server_btn_toggle_api") {
+      await handleToggleApi(interaction, guildId);
+    } else if (customId === "server_btn_notify_user") {
+      await showNotifyUserSelect(interaction, guildId);
     }
-  }
-
-  // --- Role Select ---
-  else if (
-    interaction.isRoleSelectMenu() &&
-    customId === "server_role_select"
-  ) {
-    if (!requireAdmin(interaction)) return;
-    await handleRoleSelect(interaction, guildId);
   }
 
   // --- Admin Interactions ---
@@ -154,7 +155,9 @@ async function handleButtonInteraction(
     } else if (customId === "admin_btn_unbound") {
       await handleViewUnbound(interaction, guildId);
     } else if (customId === "admin_btn_add") {
-      await showAddSponsorModal(interaction);
+      await showAddSponsorWizard(interaction);
+    } else if (customId === "admin_btn_add_manual") {
+      await showManualAddSponsorModal(interaction);
     }
   }
 
@@ -176,6 +179,39 @@ async function handleButtonInteraction(
 }
 
 /**
+ * 处理用户选择菜单 (Settings)
+ */
+async function handleUserSelectInteraction(
+  interaction: UserSelectMenuInteraction,
+): Promise<void> {
+  const { customId } = interaction;
+
+  // Server Settings
+  if (customId === "server_select_notify_user") {
+    const guildId = requireGuild(interaction);
+    if (!guildId) return;
+    if (!requireAdmin(interaction)) return;
+    await handleNotifyUserSelect(interaction, guildId);
+  }
+}
+
+/**
+ * 处理角色选择菜单
+ */
+async function handleRoleSelectInteraction(
+  interaction: RoleSelectMenuInteraction,
+): Promise<void> {
+  const { customId } = interaction;
+  const guildId = requireGuild(interaction);
+  if (!guildId) return;
+
+  if (customId === "server_role_select") {
+    if (!requireAdmin(interaction)) return;
+    await handleRoleSelect(interaction, guildId);
+  }
+}
+
+/**
  * 处理模态框提交
  */
 async function handleModalInteraction(
@@ -187,20 +223,19 @@ async function handleModalInteraction(
 
   if (customId === "me_bind_submit") {
     await handleMeModalSubmit(interaction, guildId);
-  } else if (customId === "server_config_submit") {
-    await handleServerConfigSubmit(interaction, guildId);
   } else if (customId === "admin_search_submit") {
     await handleSearchSubmit(interaction, guildId);
   } else if (customId === "admin_add_submit") {
+    // Legacy Manual
     await handleAddSponsorSubmit(interaction, guildId);
+  } else if (customId === "wizard_submit") {
+    // Wizard
+    await handleWizardSubmit(interaction, guildId);
   } else if (customId.startsWith("modal_admin_user_")) {
     await handleEditSponsorSubmit(interaction, guildId);
   }
 }
 
-/**
- * 处理用户上下文菜单
- */
 /**
  * 处理用户上下文菜单
  */
