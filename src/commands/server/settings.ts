@@ -93,40 +93,34 @@ export async function handleServerSettings(
       )
       .setTimestamp();
 
+    // Row 1: 主要操作
     const row1 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("server_btn_sync")
         .setLabel("Sync Now")
         .setStyle(ButtonStyle.Primary)
-        .setDisabled(guild.isSyncing || !hasManagedRoles || !guild.apiEnabled), // Disable sync if API disabled? Or separate concern? Actually sync is internal.
-      // Wait, Perform Sync uses internal logic, not API. So it should be fine.
-      // Updated requirement: Sync is independent.
-      // But let's check PerformSync logic. It uses database directly.
-    );
-
-    // Row 1: Core Actions
-    row1.addComponents(
+        .setDisabled(guild.isSyncing || !hasManagedRoles),
       new ButtonBuilder()
         .setCustomId("server_btn_roles")
         .setLabel("Manage Roles")
         .setStyle(ButtonStyle.Secondary),
-    );
-
-    // Row 2: Settings
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId("server_btn_notify_user")
-        .setLabel("Set Notify User")
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId("server_btn_toggle_api")
-        .setLabel(guild.apiEnabled ? "Disable API" : "Enable API")
-        .setStyle(guild.apiEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId("server_btn_api_key")
         .setLabel("View API Key")
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(!guild.apiEnabled),
+    );
+
+    // Row 2: 配置操作
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      new ButtonBuilder()
+        .setCustomId("server_btn_toggle_api")
+        .setLabel(guild.apiEnabled ? "Disable API" : "Enable API")
+        .setStyle(guild.apiEnabled ? ButtonStyle.Danger : ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId("server_btn_notify_user")
+        .setLabel("Set Notify User")
+        .setStyle(ButtonStyle.Secondary),
     );
 
     await interaction.editReply({
