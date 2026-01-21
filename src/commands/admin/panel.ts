@@ -70,15 +70,19 @@ export async function handleAdminPanel(
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId("admin_btn_add")
-        .setLabel("Add Sponsor")
+        .setLabel("Add Discord User")
         .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId("admin_btn_add_manual")
+        .setLabel("Add VRChat User")
+        .setStyle(ButtonStyle.Success),
+    );
+
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("admin_btn_list")
         .setLabel("List All")
         .setStyle(ButtonStyle.Secondary),
-    );
-
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId("admin_btn_unbound")
         .setLabel("Check Unbound")
