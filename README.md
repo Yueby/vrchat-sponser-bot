@@ -36,54 +36,54 @@
 
 - `/server` - **服务器设置面板**：
   - **Roles**: 管理 Bot 追踪的赞助者角色（添加/移除）。
-  - **Sync**: 查看同步状态或强制立即同步。
-  - **Notify**: 下拉选择接收通知的管理员。
-  - **API**: 一键开启/关闭 API 访问权限。
+
+## 🎮 指令列表
+
+### 用户指令 (User)
+
+- `/me`:
+  - **查看个人档案**: 显示你的 VRChat 绑定信息、赞助状态、服务器排名。
+  - **绑定/更新**: 绑定 VRChat 账号，或更新绑定的用户名。
+  - **VRChat 曾用名**: 查看账号绑定的历史 VRChat 用户名记录。
+
+### 管理员指令 (Admin)
+
+- `/admin panel`:
+  - 打开**管理员面板**，提供可视化按钮操作。
+  - **Search**: 搜索用户（支持 Discord ID、Discord 昵称、VRChat 名字）。
+  - **Add Discord User**: 启动向导，添加 Discord 用户为赞助者（选择用户 -> 输入 VRChat 名 -> 选择角色）。
+  - **Add VRChat User**: 手动添加非 Discord 用户（仅输入 VRChat 名和角色）。
+  - **List All**: 列出最近 30 位赞助者。
+  - **Check Unbound**: 检查有赞助者角色但未绑定 VRChat 的成员。
+
+### 服务器设置 (Server Owner)
+
+- `/server settings`:
+  - **Dashboard**: 查看服务器统计、同步状态、API 状态。
+  - **Sync Now**: 手动触发一次 Discord 角色与数据库的同步。
+  - **Manage Roles**: 设置哪些 Discord 角色被视为“赞助者”角色（Bot 会自动追踪这些角色）。
+  - **Web API**: 开启/关闭 API 访问，查看 API Key（即 URL）。
+  - **Notification**: 设置当有新绑定或同步变动时，通知哪个管理员。
 
 ---
 
-## 🌐 API 端点
+## 🔌 API 接口 (For VRChat)
 
-### `GET /health`
+Bot 提供了一个极简的 JSON 接口，专为 VRChat Udon 设计。
 
-健康状态检查
+**Endpoint:** `GET /api/vrchat/sponsors/:guildId`
 
-```json
+**Response Example:**
+
+````json
 {
-  "status": "ok",
-  "uptime": 12345,
-  "services": {
-    "database": "connected",
-    "discord": "online",
-    "guilds": 5
-  }
-}
-```
-
-### `GET /api/vrchat/sponsors/:guildId`
-
-获取指定服务器的赞助者列表（VRChat DataDictionary 格式）
-
-**响应示例**：
-
-```json
-{
-  "VIP": {
+  "Sponsor": {
     "0": {
-      "vrchatName": "VRChatUser1",
-      "displayName": "DiscordNick1",
-      "avatar": "https://cdn.discordapp.com/...",
-      "isBooster": true,
-      "joinedAt": "2024-01-01T00:00:00.000Z",
+      "vrchatName": "VRCUser1",
+      "avatar": "https://cdn.discordapp.com/avatars/...",
+      "isBooster": false,
+      "joinedAt": "2023-01-01T12:00:00.000Z",
       "supportDays": 365
-    }
-  },
-  "allRoles": ["VIP", "Member"]
-}
-```
-
-**特点**：
-
 - 按角色分组返回
 - 自动计算支持天数
 - 包含服务器成员和外部用户
@@ -111,7 +111,7 @@ DISCORD_TOKEN=your_bot_token
 CLIENT_ID=your_application_id
 MONGO_URI=mongodb+srv://user:pass@cluster.mongodb.net/dbname
 PORT=3000
-```
+````
 
 ### 3. 安装和运行
 
