@@ -4,14 +4,11 @@
  * VRChat 赞助者数据格式
  */
 export interface SponsorData {
-  userId: string;
-  guildId: string;
   vrchatName: string;
   avatar: string;
   isBooster: boolean;
   joinedAt: string | null;
   supportDays: number;
-  isExternal?: boolean;  // 标识是否为外部用户
 }
 
 /**

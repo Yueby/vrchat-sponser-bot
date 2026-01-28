@@ -1,56 +1,56 @@
-import express from 'express';
-import rateLimit from 'express-rate-limit';
-import mongoose from 'mongoose';
-import { client } from './bot';
-import { API_LIMITS, AVATAR_SIZES, SERVER } from './config/constants';
-import Guild from './models/Guild';
-import User from './models/User';
-import VRChatBinding from './models/VRChatBinding';
-import { SponsorData, SponsorsApiResponse } from './types/api';
-import { getDefaultAvatar } from './utils/external';
-import { apiCache } from './utils/cache';
-import { logger } from './utils/logger';
+import express from "express";
+import rateLimit from "express-rate-limit";
+import mongoose from "mongoose";
+import { client } from "./bot";
+import { API_LIMITS, AVATAR_SIZES, SERVER } from "./config/constants";
+import Guild from "./models/Guild";
+import User from "./models/User";
+import VRChatBinding from "./models/VRChatBinding";
+import { SponsorData, SponsorsApiResponse } from "./types/api";
+import { getDefaultAvatar } from "./utils/external";
+import { apiCache } from "./utils/cache";
+import { logger } from "./utils/logger";
 
 const app = express();
-app.set('trust proxy', 1);
+app.set("trust proxy", 1);
 
 const PORT = process.env.SERVER_PORT || process.env.PORT || SERVER.DEFAULT_PORT;
 
 const apiLimiter = rateLimit({
   windowMs: API_LIMITS.RATE_LIMIT_WINDOW,
   limit: API_LIMITS.RATE_LIMIT_MAX,
-  message: { error: 'Too many requests, please try again later.' },
-  standardHeaders: 'draft-8',
+  message: { error: "Too many requests, please try again later." },
+  standardHeaders: "draft-8",
   legacyHeaders: false,
 });
 
-app.use('/api/', apiLimiter);
+app.use("/api/", apiLimiter);
 
-app.get('/ping', (req, res) => res.send('pong'));
+app.get("/ping", (req, res) => res.send("pong"));
 
-app.get('/health', (req, res) => {
-  const isDev = process.env.NODE_ENV === 'development';
+app.get("/health", (req, res) => {
+  const isDev = process.env.NODE_ENV === "development";
   const isDbConnected = mongoose.connection.readyState === 1;
   const isBotOnline = client.isReady();
   const allHealthy = isDbConnected && (isDev || isBotOnline);
-  
+
   res.status(allHealthy ? 200 : 503).json({
-    status: allHealthy ? 'ok' : 'degraded',
+    status: allHealthy ? "ok" : "degraded",
     uptime: Math.floor(process.uptime()),
     timestamp: Date.now(),
     services: {
-      database: isDbConnected ? 'connected' : 'disconnected',
-      discord: isBotOnline ? 'online' : 'offline'
-    }
+      database: isDbConnected ? "connected" : "disconnected",
+      discord: isBotOnline ? "online" : "offline",
+    },
   });
 });
 
-app.get('/', (req, res) => res.send('VRChat Sponsor Bot is running.'));
+app.get("/", (req, res) => res.send("VRChat Sponsor Bot is running."));
 
 /**
  * 统合后的 VRChat 赞助者列表 API
  */
-app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
+app.get("/api/vrchat/sponsors/:guildId", async (req, res) => {
   const { guildId } = req.params;
   const startTime = Date.now();
 
@@ -59,7 +59,10 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     if (cachedData) return res.json(cachedData);
 
     const guild = await Guild.findOne({ guildId });
-    if (!guild || !guild.apiEnabled) return res.status(403).json({ error: 'API access disabled or guild not found' });
+    if (!guild || !guild.apiEnabled)
+      return res
+        .status(403)
+        .json({ error: "API access disabled or guild not found" });
 
     // 1. 获取该服务器所有 User 记录
     const users = await User.find({ guildId }).lean();
@@ -67,18 +70,26 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
 
     // 2. 获取所有绑定信息
     const bindings = await VRChatBinding.find({ guildId }).lean();
-    const bindingMap = new Map(bindings.map(b => [b.userId, b]));
+    const bindingMap = new Map(bindings.map((b) => [b.userId, b]));
 
     // 3. 批量获取 Discord 成员 (仅限 Discord 来源用户)
-    const discordUserIds = users.filter(u => u.userType === 'discord').map(u => u.userId);
+    const discordUserIds = users
+      .filter((u) => u.userType === "discord")
+      .map((u) => u.userId);
     const memberMap = new Map();
-    const discordGuild = client.isReady() ? client.guilds.cache.get(guildId) : null;
-    
+    const discordGuild = client.isReady()
+      ? client.guilds.cache.get(guildId)
+      : null;
+
     if (discordGuild && discordUserIds.length > 0) {
       try {
-        const members = await discordGuild.members.fetch({ user: discordUserIds });
-        members.forEach(m => memberMap.set(m.id, m));
-      } catch (e) { logger.warn('Member fetch error:', e); }
+        const members = await discordGuild.members.fetch({
+          user: discordUserIds,
+        });
+        members.forEach((m) => memberMap.set(m.id, m));
+      } catch (e) {
+        logger.warn("Member fetch error:", e);
+      }
     }
 
     const roleGroups: Record<string, SponsorData[]> = {};
@@ -86,17 +97,20 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     const managedRoleIds = new Set(guild.managedRoleIds);
 
     // 4. 处理统一的用户数据
-    users.forEach(user => {
+    users.forEach((user) => {
       const binding = bindingMap.get(user.userId);
       if (!binding) return; // 没绑定 VRChat 的不显示
 
       const member = memberMap.get(user.userId);
-      const avatar = user.avatarUrl || member?.displayAvatarURL({ size: AVATAR_SIZES.LARGE }) || getDefaultAvatar();
-      
+      const avatar =
+        user.avatarUrl ||
+        member?.displayAvatarURL({ size: AVATAR_SIZES.LARGE }) ||
+        getDefaultAvatar();
+
       // 角色解析：Discord ID 转名 或 直接使用虚拟名
       const roleNames: string[] = [];
-      if (user.userType === 'discord') {
-        user.roles.forEach(roleId => {
+      if (user.userType === "discord") {
+        user.roles.forEach((roleId) => {
           if (managedRoleIds.has(roleId)) {
             const role = discordGuild?.roles.cache.get(roleId);
             if (role) roleNames.push(role.name);
@@ -109,17 +123,16 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
       if (roleNames.length === 0) return;
 
       const userData: SponsorData = {
-        userId: user.userId,
-        guildId: user.guildId,
         vrchatName: binding.vrchatName,
         avatar,
         isBooster: user.isBooster,
         joinedAt: user.joinedAt.toISOString(),
-        supportDays: Math.floor((Date.now() - user.joinedAt.getTime()) / (1000 * 60 * 60 * 24)),
-        isExternal: user.userType === 'manual'
+        supportDays: Math.floor(
+          (Date.now() - user.joinedAt.getTime()) / (1000 * 60 * 60 * 24),
+        ),
       };
 
-      roleNames.forEach(roleName => {
+      roleNames.forEach((roleName) => {
         if (!roleGroups[roleName]) roleGroups[roleName] = [];
         roleGroups[roleName].push(userData);
         allRoles.add(roleName);
@@ -128,7 +141,10 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
 
     const result = {} as SponsorsApiResponse;
     for (const [role, group] of Object.entries(roleGroups)) {
-      result[role] = group.reduce((acc, user, idx) => ({ ...acc, [idx]: user }), {});
+      result[role] = group.reduce(
+        (acc, user, idx) => ({ ...acc, [idx]: user }),
+        {},
+      );
     }
     result.allRoles = Array.from(allRoles);
 
@@ -136,28 +152,35 @@ app.get('/api/vrchat/sponsors/:guildId', async (req, res) => {
     res.json(result);
   } catch (error) {
     logger.error(`API Error:`, error);
-    res.status(500).json({ error: 'Internal error' });
+    res.status(500).json({ error: "Internal error" });
   }
 });
 
 /**
  * 用户详情 API
  */
-app.get('/api/vrchat/sponsors/:guildId/:userId', async (req, res) => {
+app.get("/api/vrchat/sponsors/:guildId/:userId", async (req, res) => {
   const { guildId, userId } = req.params;
 
   try {
     const user = await User.findOne({ userId, guildId }).lean();
     const binding = await VRChatBinding.findOne({ userId, guildId }).lean();
-    if (!user || !binding) return res.status(404).json({ error: 'User not found' });
+    if (!user || !binding)
+      return res.status(404).json({ error: "User not found" });
 
-    const discordUser = client.isReady() ? client.users.cache.get(userId) : null;
-    const discordGuild = client.isReady() ? client.guilds.cache.get(guildId) : null;
+    const discordUser = client.isReady()
+      ? client.users.cache.get(userId)
+      : null;
+    const discordGuild = client.isReady()
+      ? client.guilds.cache.get(guildId)
+      : null;
     const member = discordGuild ? discordGuild.members.cache.get(userId) : null;
 
     let roleNames: string[] = [];
-    if (user.userType === 'discord' && discordGuild) {
-      roleNames = user.roles.map(id => discordGuild.roles.cache.get(id)?.name).filter((n): n is string => !!n);
+    if (user.userType === "discord" && discordGuild) {
+      roleNames = user.roles
+        .map((id) => discordGuild.roles.cache.get(id)?.name)
+        .filter((n): n is string => !!n);
     } else {
       roleNames = user.roles;
     }
@@ -166,22 +189,33 @@ app.get('/api/vrchat/sponsors/:guildId/:userId', async (req, res) => {
       userId,
       guildId,
       vrchatName: binding.vrchatName,
-      displayName: user.displayName || member?.displayName || discordUser?.username || 'Unknown',
-      avatar: user.avatarUrl || member?.displayAvatarURL({ size: AVATAR_SIZES.LARGE }) || getDefaultAvatar(),
+      displayName:
+        user.displayName ||
+        member?.displayName ||
+        discordUser?.username ||
+        "Unknown",
+      avatar:
+        user.avatarUrl ||
+        member?.displayAvatarURL({ size: AVATAR_SIZES.LARGE }) ||
+        getDefaultAvatar(),
       isBooster: user.isBooster,
-      isExternal: user.userType === 'manual',
+      isExternal: user.userType === "manual",
       joinedAt: user.joinedAt,
-      supportDays: Math.floor((Date.now() - user.joinedAt.getTime()) / (1000 * 60 * 60 * 24)),
+      supportDays: Math.floor(
+        (Date.now() - user.joinedAt.getTime()) / (1000 * 60 * 60 * 24),
+      ),
       bindTime: binding.bindTime,
       roles: roleNames,
-      nameHistory: binding.nameHistory || []
+      nameHistory: binding.nameHistory || [],
     });
   } catch (error) {
-    res.status(500).json({ error: 'Internal error' });
+    res.status(500).json({ error: "Internal error" });
   }
 });
 
 export const startServer = () => {
   const port = Number(PORT);
-  return app.listen(port, '0.0.0.0', () => logger.success(`Server listening on port ${port}`));
+  return app.listen(port, "0.0.0.0", () =>
+    logger.success(`Server listening on port ${port}`),
+  );
 };
